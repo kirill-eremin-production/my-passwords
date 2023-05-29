@@ -1,5 +1,6 @@
 import express from "express";
 
+// Для NodeJS ECMAScript modules обязательно надо указывать расширение файлов
 import { prepareStore } from "./store.js";
 
 prepareStore();
