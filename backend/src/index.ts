@@ -11,7 +11,7 @@ prepareStore();
 const app = express();
 app.use(bodyParser.json());
 
-app.get("/passwords", getPasswords);
-app.post("/passwords", postPasswords);
+app.get("/api/passwords", getPasswords);
+app.post("/api/passwords", postPasswords);
 
 app.listen(60125);

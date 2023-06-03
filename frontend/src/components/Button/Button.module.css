@@ -1,0 +1,23 @@
+.root {
+  border: none;
+  background-color: var(--main-button-background-color);
+  cursor: pointer;
+  height: 48px;
+  width: 310px;
+  border-radius: 8px;
+  color: var(--main-button-text-color);
+  margin: auto;
+  display: block;
+  font-size: 16px;
+  line-height: 24px;
+  margin-top: 16px;
+}
+
+.root:active {
+  transform: scale(0.98);
+}
+
+.theme_second {
+  color: var(--second-button-text-color);
+  background-color: var(--second-button-background-color);
+}
