@@ -1,0 +1,30 @@
+.root {
+  position: relative;
+  width: 310px;
+  height: 48px;
+  margin: auto;
+  margin-top: 12px;
+}
+
+.input {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+  outline: none;
+  border: 1px solid var(--second-color);
+  box-sizing: border-box;
+  font-size: 16px;
+  line-height: 24px;
+  padding: 10px;
+}
+
+.label {
+  position: absolute;
+  background-color: var(--background-color);
+  color: var(--second-color);
+  font-size: 10px;
+  line-height: 16px;
+  left: 10px;
+  top: -8px;
+  padding: 0 5px;
+}
