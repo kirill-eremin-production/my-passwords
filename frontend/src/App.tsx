@@ -1,83 +1,83 @@
-import React, { useState } from "react";
-import styles from "./App.module.css";
+import React, { useState } from 'react'
+import styles from './App.module.css'
 
-import { MasterPassword } from "./pages/MasterPassword/MasterPassword";
-import { List } from "./pages/List/List";
+import { MasterPassword } from './pages/MasterPassword/MasterPassword'
+import { List } from './pages/List/List'
 
-import { usePasswords } from "./hooks/usePasswords";
-import { SelectedPassword } from "./pages/SelectedPassword/SelectedPassword";
-import { CreateNewPassword } from "./pages/CreateNewPassword/CreateNewPassword";
-import { Password } from "./types/passwords";
+import { usePasswords } from './hooks/usePasswords'
+import { SelectedPassword } from './pages/SelectedPassword/SelectedPassword'
+import { CreateNewPassword } from './pages/CreateNewPassword/CreateNewPassword'
+import { Password } from './types/passwords'
 
 function App() {
-  const {
-    passwords,
-    addPassword,
-    updatePassword,
-    deletePassword,
-    isMasterPassword,
-    selectedPasswordId,
-    setMasterPassword,
-    setSelectedPasswordId,
-  } = usePasswords();
+    const {
+        passwords,
+        addPassword,
+        updatePassword,
+        deletePassword,
+        isMasterPassword,
+        selectedPasswordId,
+        setMasterPassword,
+        setSelectedPasswordId,
+    } = usePasswords()
 
-  const [isCreateNewPasswordPage, setIsCreateNewPasswordPage] =
-    useState<boolean>(false);
+    const [isCreateNewPasswordPage, setIsCreateNewPasswordPage] =
+        useState<boolean>(false)
 
-  const onCreateNewPasswordSave = (password: Password) => {
-    addPassword(password);
-  };
-
-  const onSaveSelectedPassword = (password: Password) => {
-    if (typeof selectedPasswordId !== "number") {
-      return;
+    const onCreateNewPasswordSave = (password: Password) => {
+        addPassword(password)
     }
 
-    updatePassword(selectedPasswordId, password);
-  };
+    const onSaveSelectedPassword = (password: Password) => {
+        if (typeof selectedPasswordId !== 'number') {
+            return
+        }
 
-  const onDeleteSelectedPassword = () => {
-    if (typeof selectedPasswordId !== "number") {
-      return;
+        updatePassword(selectedPasswordId, password)
     }
 
-    deletePassword(selectedPasswordId);
-  };
+    const onDeleteSelectedPassword = () => {
+        if (typeof selectedPasswordId !== 'number') {
+            return
+        }
 
-  let page = (
-    <List
-      onGoToCreateNewPasswordPage={() => setIsCreateNewPasswordPage(true)}
-      onSelectPasswordFromList={setSelectedPasswordId}
-      passwords={passwords || []}
-    ></List>
-  );
+        deletePassword(selectedPasswordId)
+    }
 
-  if (!isMasterPassword) {
-    page = <MasterPassword setMasterPassword={setMasterPassword} />;
-  }
+    let page = (
+        <List
+            onGoToCreateNewPasswordPage={() => setIsCreateNewPasswordPage(true)}
+            onSelectPasswordFromList={setSelectedPasswordId}
+            passwords={passwords || []}
+        ></List>
+    )
 
-  if (typeof selectedPasswordId === "number") {
-    page = (
-      <SelectedPassword
-        onDelete={onDeleteSelectedPassword}
-        onClose={() => setSelectedPasswordId(null)}
-        onSave={onSaveSelectedPassword}
-        passwords={passwords}
-        selectedPasswordId={selectedPasswordId}
-      />
-    );
-  }
+    if (!isMasterPassword) {
+        page = <MasterPassword setMasterPassword={setMasterPassword} />
+    }
 
-  if (isCreateNewPasswordPage) {
-    page = (
-      <CreateNewPassword
-        onSave={onCreateNewPasswordSave}
-        onGoBack={() => setIsCreateNewPasswordPage(false)}
-      />
-    );
-  }
+    if (typeof selectedPasswordId === 'number') {
+        page = (
+            <SelectedPassword
+                onDelete={onDeleteSelectedPassword}
+                onClose={() => setSelectedPasswordId(null)}
+                onSave={onSaveSelectedPassword}
+                passwords={passwords}
+                selectedPasswordId={selectedPasswordId}
+            />
+        )
+    }
 
-  return <div className={styles.root}>{page}</div>;
+    if (isCreateNewPasswordPage) {
+        page = (
+            <CreateNewPassword
+                onSave={onCreateNewPasswordSave}
+                onGoBack={() => setIsCreateNewPasswordPage(false)}
+            />
+        )
+    }
+
+    return <div className={styles.root}>{page}</div>
 }
 
-export default App;
+export default App

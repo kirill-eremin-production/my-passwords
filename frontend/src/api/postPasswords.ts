@@ -1,25 +1,25 @@
 export interface PostPasswordsParams {
-  data: any;
-  callback: (data: any) => void;
+    data: any
+    callback: (data: any) => void
 }
 
 export const postPasswords = async ({
-  data,
-  callback,
+    data,
+    callback,
 }: PostPasswordsParams): Promise<any> => {
-  const response = await fetch("/api/passwords", {
-    method: "POST",
-    body: JSON.stringify({ data }),
-    headers: new Headers({
-      "Content-Type": "application/json",
-    }),
-  });
+    const response = await fetch('/api/passwords', {
+        method: 'POST',
+        body: JSON.stringify({ data }),
+        headers: new Headers({
+            'Content-Type': 'application/json',
+        }),
+    })
 
-  const responseData = await response.text();
+    const responseData = await response.text()
 
-  if (responseData === "OK") {
-    callback(responseData);
-  }
+    if (responseData === 'OK') {
+        callback(responseData)
+    }
 
-  return responseData;
-};
+    return responseData
+}

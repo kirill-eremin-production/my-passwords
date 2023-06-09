@@ -1,17 +1,19 @@
 export interface FetchPasswordsParams {
-  callback: (data: any) => void;
+    callback: (data: any) => void
 }
 
 export const fetchPasswords = async ({
-  callback,
+    callback,
 }: FetchPasswordsParams): Promise<any> => {
-  const response = await fetch("/api/passwords", {
-    method: "GET",
-  });
+    const response = await fetch('/api/passwords', {
+        method: 'GET',
+    })
 
-  const { data } = await response.json();
+    const { data } = await response.json()
 
-  callback(JSON.parse(data));
+    const modifiedData = String(data).replace('"', '')
 
-  return data;
-};
+    callback(modifiedData)
+
+    return modifiedData
+}
