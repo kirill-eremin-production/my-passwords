@@ -6,16 +6,39 @@
    - `sudo apt install nginx`
    - Проверить, что в браузере по адресу `localhost` открывается страница `Welcome to nginx!`
 
-3. Настроить proxy на frontend и backend
+3. Сгенерировать ssl сертификат
+   - В терминале выполнить
+     ```
+     sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/ssl/private/local.passwords.keremin.ru.key -out /etc/ssl/certs/local.passwords.keremin.ru.crt
+     ```
+   - Заполнить форму данными
+     ```
+     Country Name: RU
+     State or Province Name: Moscow
+     Locality Name: Moscow
+     Organization Name: kirilleremin
+     Organizational Unit Name: development
+     Common Name (e.g. server FQDN or YOUR name): local.passwords.keremin.ru
+     Email Address: example@gmail.com
+     ```
+     
+   - В результате должны сгенерироваться сертификаты в 
+     - `sudo ls /etc/ssl/private/` 
+     - `ls /etc/ssl/certs/`
+
+4. Настроить proxy на frontend и backend
 
    - `sudo nano /etc/nginx/sites-available/local.passwords.keremin.ru`
 
      ```
      server {
-        listen 80;
-        listen [::]:80;
+        listen 443 ssl;
+        listen [::]:443 ssl;
 
         server_name local.passwords.keremin.ru;
+
+        ssl_certificate /etc/ssl/certs/local.passwords.keremin.ru.crt;
+        ssl_certificate_key /etc/ssl/private/local.passwords.keremin.ru.key;
 
         location / {
             proxy_set_header Host $http_host;
@@ -23,7 +46,7 @@
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
 
-            proxy_pass http://127.0.0.1:3000;
+            proxy_pass https://127.0.0.1:3000;
         }
 
         location /api {
@@ -38,6 +61,6 @@
 
    - Перезапустить nginx `sudo systemctl restart nginx`
 
-4. Запустить frontend и проверить, что оно открывается в браузере по адресу http://local.passwords.keremin.ru
+5. Запустить frontend и проверить, что оно открывается в браузере по адресу https://local.passwords.keremin.ru
 
-5. Запустить backend и проверить, что оно доступно по адресу http://local.passwords.keremin.ru/api
+6. Запустить backend и проверить, что оно доступно по адресу https://local.passwords.keremin.ru/api

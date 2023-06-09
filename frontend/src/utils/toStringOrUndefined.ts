@@ -1,7 +1,7 @@
 export function toStringOrUndefined(value: any): string | undefined {
-  if (value) {
-    return String(value);
-  }
+    if (value) {
+        return String(value)
+    }
 
-  return undefined;
+    return undefined
 }

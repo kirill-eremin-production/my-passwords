@@ -1,7 +1,7 @@
 export type Password = {
-  title?: string;
-  login?: string;
-  password?: string;
-};
+    title?: string
+    login?: string
+    password?: string
+}
 
-export type Passwords = Password[];
+export type Passwords = Password[]
