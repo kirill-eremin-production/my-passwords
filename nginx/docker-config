@@ -1,0 +1,17 @@
+server {
+    listen 80;
+    listen [::]:80;
+
+    root /usr/src/app/frontend;
+    index index.html;
+
+    location / {
+        # First attempt to serve request as file, then
+        # as directory, then fall back to redirecting to index.html
+        try_files $uri $uri/ $uri.html /index.html;
+    }
+
+    location /api {
+        proxy_pass http://127.0.0.1:60125;
+    }
+}
