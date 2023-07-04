@@ -1,6 +1,11 @@
 server {
-    listen 80;
-    listen [::]:80;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name passwords.keremin.ru;
+
+    ssl_certificate /usr/src/app/ssl/my-passwords.crt;
+    ssl_certificate_key /usr/src/app/ssl/my-passwords.key;
 
     root /usr/src/app/frontend;
     index index.html;
