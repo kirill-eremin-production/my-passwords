@@ -7,6 +7,7 @@
    - Проверить, что в браузере по адресу `localhost` открывается страница `Welcome to nginx!`
 
 3. Сгенерировать ssl сертификат
+
    - В терминале выполнить
      ```
      sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout /etc/ssl/private/local.passwords.keremin.ru.key -out /etc/ssl/certs/local.passwords.keremin.ru.crt
@@ -21,15 +22,14 @@
      Common Name (e.g. server FQDN or YOUR name): local.passwords.keremin.ru
      Email Address: example@gmail.com
      ```
-     
-   - В результате должны сгенерироваться сертификаты в 
-     - `sudo ls /etc/ssl/private/` 
+   - В результате должны сгенерироваться сертификаты в
+     - `sudo ls /etc/ssl/private/`
      - `ls /etc/ssl/certs/`
 
 4. Настроить proxy на frontend и backend
 
    - `sudo nano /etc/nginx/sites-available/local.passwords.keremin.ru`
-   
+
    - скопировать содержимое `/nginx/dev-config`
 
    - `sudo ln -s /etc/nginx/sites-available/local.passwords.keremin.ru /etc/nginx/sites-enabled/`
