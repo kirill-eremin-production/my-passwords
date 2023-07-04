@@ -7,19 +7,19 @@
    - см. пример в [proxy.md](../dev/proxy.md)
 
      ```
-     sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ./nginx/ssl/my-passwords.key -out ./nginx/ssl/my-passwords.crt
+     sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout ./nginx/ssl/privkey.pem -out ./nginx/ssl/fullchain.pem
      ```
 
      **Сертификат сгенерируется в текущей папочке**
 
      **Предполагается, что вы находитесь в корне проекта**
 
-2. Nginx внутри Docker должен иметь доступ на чтение сертификата. Т.е. нужно проверить, что `.key` и `.crt` доступны на чтение. При необходимости права можно поменять с помощью `chmod 644 ./filename`
+2. Nginx внутри Docker должен иметь доступ на чтение сертификата. Т.е. нужно проверить, что `key.pem` и `cert.pem` доступны на чтение. При необходимости права можно поменять с помощью `chmod 644 ./filename`
 
    - [chmod-calculator](https://chmod-calculator.com/)
 
 3. В таком случае контейнер надо запускать так
 
    ```
-   docker run -p 8080:443 -v ./nginx/ssl:/usr/src/app/ssl -d kirilleremin/my-passwords
+   docker run -p 8080:443 -v ./nginx/ssl:/usr/src/app/ssl -d keremin/my-passwords
    ```

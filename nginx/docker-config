@@ -4,8 +4,8 @@ server {
 
     server_name passwords.keremin.ru;
 
-    ssl_certificate /usr/src/app/ssl/my-passwords.crt;
-    ssl_certificate_key /usr/src/app/ssl/my-passwords.key;
+    ssl_certificate /usr/src/app/ssl/fullchain.pem;
+    ssl_certificate_key /usr/src/app/ssl/privkey.pem;
 
     root /usr/src/app/frontend;
     index index.html;
