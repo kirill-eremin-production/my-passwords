@@ -7,6 +7,7 @@ import { List } from './pages/List/List'
 import { usePasswords } from './hooks/usePasswords'
 import { SelectedPassword } from './pages/SelectedPassword/SelectedPassword'
 import { CreateNewPassword } from './pages/CreateNewPassword/CreateNewPassword'
+import { AuthPage } from './pages/AuthPage/AuthPage'
 import { Password } from './types/passwords'
 
 function App() {
@@ -23,6 +24,8 @@ function App() {
 
     const [isCreateNewPasswordPage, setIsCreateNewPasswordPage] =
         useState<boolean>(false)
+
+    const [isAuthPage, setIsAuthPage] = useState<boolean>(true)
 
     const onCreateNewPasswordSave = (password: Password) => {
         addPassword(password)
@@ -75,6 +78,10 @@ function App() {
                 onGoBack={() => setIsCreateNewPasswordPage(false)}
             />
         )
+    }
+
+    if (isAuthPage) {
+        return <AuthPage setIsAuthPage={setIsAuthPage} />
     }
 
     return <div className={styles.root}>{page}</div>
