@@ -81,7 +81,7 @@ function App() {
     }
 
     if (isAuthPage) {
-        return <AuthPage setIsAuthPage={setIsAuthPage} />
+        page = <AuthPage setIsAuthPage={setIsAuthPage} />
     }
 
     return <div className={styles.root}>{page}</div>

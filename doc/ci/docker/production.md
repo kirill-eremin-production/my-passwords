@@ -11,5 +11,6 @@
      `/etc/letsencrypt/live/<domain>/privkey.pem`
 
 3. Запустить docker образ
-   - `docker run -p 443:443 -v /etc/letsencrypt/live/my-passwords.keremin.ru:/usr/src/app/ssl -v /etc/letsencrypt/archive:/usr/src/archive -d keremin/my-passwords`
+   - `docker run -p 443:443 -v /etc/letsencrypt/live/my-passwords.keremin.ru:/usr/src/app/ssl -v /etc/letsencrypt/archive:/usr/src/archive --env-file ./env -d keremin/my-passwords`
    - Certbot генерирует сертификат в `/etc/letsencrypt/archive` и симлинки кладет в `/etc/letsencrypt/live` поэтому в Docker Valume еще надо передавать `archive`, чтобы nginx мог использовать реальные файлы сертификатов
+   - В файл ./env файле указываем необходимые переменные окружения
