@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
 
 const storeDirPath = resolve(".", "store");
-const passwordsFilePath = resolve(storeDirPath, "my-passwords.txt");
+export const passwordsFilePath = resolve(storeDirPath, "my-passwords.txt");
 const encoding = "utf-8";
 
 /** При необходимости создает файл для хранения паролей */
