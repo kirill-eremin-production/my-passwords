@@ -3,6 +3,7 @@ import { Password, Passwords } from '../../types/passwords'
 import { Button } from '../../components/Button/Button'
 import { PasswordForm } from '../../components/PasswordForm/PasswordForm'
 import { Logo } from '../../components/Logo/Logo'
+import { Text } from '../../components/Text/Text'
 
 export interface SelectedPasswordProps {
     passwords: Passwords
@@ -32,6 +33,7 @@ export const SelectedPassword: FC<SelectedPasswordProps> = ({
     return (
         <div>
             <Logo />
+            <Text size="title36">Секрет</Text>
             <PasswordForm
                 password={passwords[selectedPasswordId]}
                 onSubmit={onSaveClick}

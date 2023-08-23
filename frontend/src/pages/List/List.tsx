@@ -5,6 +5,7 @@ import { Passwords } from '../../types/passwords'
 import { Logo } from '../../components/Logo/Logo'
 import { Button } from '../../components/Button/Button'
 import { PasswordsList } from '../../components/PasswordsList/PasswordsList'
+import { Text } from '../../components/Text/Text'
 
 export interface PasswordsListProps {
     passwords: Passwords
@@ -20,6 +21,7 @@ export const List: FC<PasswordsListProps> = ({
     return (
         <div>
             <Logo />
+            <Text size="title36">Ваши секреты</Text>
             <PasswordsList
                 onSelectListItem={onSelectPasswordFromList}
                 passwords={passwords}

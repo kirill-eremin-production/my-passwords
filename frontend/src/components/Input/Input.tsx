@@ -8,6 +8,7 @@ export interface InputProps {
     placeholder?: string
     type?: string
     defaultValue?: string | number
+    autoFocus?: boolean
 }
 
 export const Input: FC<InputProps> = ({
@@ -16,11 +17,13 @@ export const Input: FC<InputProps> = ({
     name,
     placeholder,
     defaultValue,
+    autoFocus,
 }) => {
     return (
         <div className={styles.root}>
             <label className={styles.label}>{label}</label>
             <input
+                autoFocus={autoFocus}
                 type={type}
                 className={styles.input}
                 name={name}
