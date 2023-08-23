@@ -5,6 +5,7 @@ import {
   storeSession,
   removeExpiredSessionsFromSessionStore,
 } from "../sessionsStore.js";
+import { sendTelegramMessage } from "../api/telegram/sendMessage.js";
 
 export function authorizationMiddleware(
   req: Request,
@@ -25,6 +26,7 @@ export function authorizationMiddleware(
       time: new Date().getTime(),
       valid: false,
     });
+    sendTelegramMessage(`Ваш код для входа в my-passwords: **${code}**`);
     res.status(401);
     res.end();
   } else {

@@ -21,8 +21,6 @@ export function sendAuthCode(req: Request, res: Response) {
 
   const sessionData = sessionsStore[sessionIdFromRequest];
 
-  console.log(">>> code = ", code);
-
   if (sessionData.code === code) {
     storeSession({ ...sessionData, valid: true });
     res.sendStatus(200);
