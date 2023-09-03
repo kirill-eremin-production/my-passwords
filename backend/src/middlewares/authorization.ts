@@ -6,6 +6,7 @@ import {
   removeExpiredSessionsFromSessionStore,
 } from "../sessionsStore.js";
 import { sendTelegramMessage } from "../api/telegram/sendMessage.js";
+import { generateConfirmationCode } from "../utils/generateConfirmationCode";
 
 export function authorizationMiddleware(
   req: Request,
@@ -18,11 +19,11 @@ export function authorizationMiddleware(
 
   if (!sessionIdFromRequest) {
     const sessionId = generateSessionId();
-    const code = generateCode();
+    const code = generateConfirmationCode();
     res.cookie("sessionId", sessionId, { httpOnly: true });
     storeSession({
       sessionId,
-      code,
+      code: String(code),
       time: new Date().getTime(),
       valid: false,
     });
@@ -51,8 +52,4 @@ function generateSessionId(): string {
   const randomNumber = Math.random();
 
   return `${time}-${randomNumber}`;
-}
-
-function generateCode(): string {
-  return String(Math.floor(1000 + Math.random() * 9000));
 }
