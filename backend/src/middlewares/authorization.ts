@@ -1,20 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 
-import {
-  readSessionsStore,
-  storeSession,
-  removeExpiredSessionsFromSessionStore,
-} from "../sessionsStore.js";
+import { readSessionsStore, storeSession } from "../sessionsStore.js";
 import { sendTelegramMessage } from "../api/telegram/sendMessage.js";
-import { generateConfirmationCode } from "../utils/generateConfirmationCode";
+import { generateConfirmationCode } from "../utils/generateConfirmationCode.js";
 
 export function authorizationMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  removeExpiredSessionsFromSessionStore();
-
   const sessionIdFromRequest = req?.cookies?.sessionId;
 
   if (!sessionIdFromRequest) {
