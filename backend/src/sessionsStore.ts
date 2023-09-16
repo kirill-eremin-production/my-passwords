@@ -5,7 +5,7 @@ import { HOUR } from "./constants";
 
 export interface SessionData {
   sessionId: string;
-  code: string;
+  code: string | null;
   valid: boolean;
   time: number;
 }
@@ -21,7 +21,7 @@ export function prepareSessionsStore() {
   const isStoreFileExists = existsSync(sessionsFilePath);
 
   if (!isStoreFileExists) {
-    writeFileSync(sessionsFilePath, "", { encoding });
+    writeFileSync(sessionsFilePath, "{}", { encoding });
   }
 }
 

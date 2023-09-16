@@ -3,7 +3,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 
-import { authorizationMiddleware } from "./middlewares/authorization.js";
+import { authorizationMiddleware } from "./middlewares/authorization/authorizationMiddleware";
 import { getPasswords, postPasswords } from "./handlers/passwords";
 import { checkAuth, sendAuthCode } from "./handlers/auth";
 import { init } from "./init.js";
