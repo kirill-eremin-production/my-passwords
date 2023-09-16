@@ -1,16 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
 
+import { HOUR } from "./constants";
+
 export interface SessionData {
   sessionId: string;
   code: string;
   valid: boolean;
   time: number;
 }
-
-const SEC = 1000;
-const MIN = 60 * SEC;
-const HOUR = 60 * MIN;
 
 const storeDirPath = resolve(".", "store");
 const sessionsFilePath = resolve(storeDirPath, "sessions.txt");
