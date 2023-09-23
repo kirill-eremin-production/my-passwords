@@ -27,7 +27,9 @@ export async function generateAndSendCode(req: Request, res: Response) {
 
   // TODO: Понять, что тут приходит в случае успеха и в случае ошибки. Обработать оба варианта. Возможно, здесь надо добавить ретраи.
   const result = await sendTelegramMessage(
-    `Ваш код для входа в my-passwords: **${code}**`
+    `Ваш код для входа в my-passwords: ***${code}***\n\n\`${String(
+      req.headers["user-agent"]
+    )}\``
   );
 
   res.sendStatus(200);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import styles from './App.module.css'
 
 import { MasterPassword } from './pages/MasterPassword/MasterPassword'
@@ -9,8 +9,15 @@ import { SelectedPassword } from './pages/SelectedPassword/SelectedPassword'
 import { CreateNewPassword } from './pages/CreateNewPassword/CreateNewPassword'
 import { AuthPage } from './pages/AuthPage/AuthPage'
 import { Password } from './types/passwords'
+import { LoadingPage } from './pages/LoadingPage/LoadingPage'
 
 function App() {
+    const [isLoading, setIsLoading] = useState(true)
+    const [loadingMessage, setLoadingMessage] = useState('')
+    const [isCreateNewPasswordPage, setIsCreateNewPasswordPage] =
+        useState<boolean>(false)
+    const [isAuthPage, setIsAuthPage] = useState<boolean>(true)
+
     const {
         passwords,
         addPassword,
@@ -20,12 +27,7 @@ function App() {
         selectedPasswordId,
         setMasterPassword,
         setSelectedPasswordId,
-    } = usePasswords()
-
-    const [isCreateNewPasswordPage, setIsCreateNewPasswordPage] =
-        useState<boolean>(false)
-
-    const [isAuthPage, setIsAuthPage] = useState<boolean>(true)
+    } = usePasswords({ setIsLoading, setIsAuthPage, setLoadingMessage })
 
     const onCreateNewPasswordSave = (password: Password) => {
         addPassword(password)
@@ -82,6 +84,10 @@ function App() {
 
     if (isAuthPage) {
         page = <AuthPage setIsAuthPage={setIsAuthPage} />
+    }
+
+    if (isLoading) {
+        page = <LoadingPage message={loadingMessage} />
     }
 
     return <div className={styles.root}>{page}</div>
