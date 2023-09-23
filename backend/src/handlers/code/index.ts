@@ -1,0 +1,1 @@
+export { generateAndSendCode } from "./post";

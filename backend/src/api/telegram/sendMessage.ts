@@ -1,4 +1,4 @@
-import { env } from "../../env.js";
+import { env } from "../../env";
 
 export async function sendTelegramMessage(text: string) {
   return await fetch(

@@ -1,7 +1,15 @@
 import { Request, Response, NextFunction } from "express";
 
-import { getSessionFromReq, createNewSession } from "./utils";
+import { getSessionFromReq } from "./utils";
 
+/**
+ * Когда: в запросе нет валидной сессии
+ * Тогда:
+ *    — возвращаем 403 статус (потому что сессию еще надо подтвердить кодом безопасности)
+ *
+ * Когда: в запросе есть валидная сессия
+ * Тогда: идем дальше
+ */
 export function authorizationMiddleware(
   req: Request,
   res: Response,
@@ -9,17 +17,8 @@ export function authorizationMiddleware(
 ) {
   const session = getSessionFromReq(req);
 
-  if (!session) {
-    const newSessionId = createNewSession();
-
-    res.cookie("sessionId", newSessionId, { httpOnly: true });
-    res.status(401);
-    res.end();
-    return;
-  }
-
-  if (!session.valid) {
-    res.status(401);
+  if (!session?.valid) {
+    res.status(403);
     res.end();
     return;
   }

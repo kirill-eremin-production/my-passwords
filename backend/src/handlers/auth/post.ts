@@ -1,33 +1,22 @@
 import { Request, Response } from "express";
 
-import {
-  readSessionsStore,
-  storeSession,
-  removeExpiredSessionsFromSessionStore,
-} from "../../sessionsStore.js";
+import { storeSession } from "../../sessionsStore";
+import { getSessionFromReq } from "../../middlewares/authorization/utils";
 
-export function sendAuthCode(req: Request, res: Response) {
+/**
+ * Когда: в запросе пришел правильный код (код в запросе совпадает с ожидаемым кодом подтверждения сессии)
+ * Тогда: делаем сессию валидной и возвращает 200 статус
+ * Иначе: возвращаем 403 статус
+ */
+export function validateSession(req: Request, res: Response) {
+  const session = getSessionFromReq(req);
   const code = req?.body?.data?.code;
 
-  console.log(req?.body);
-
-  if (!code) {
-    res.sendStatus(403);
-    return;
-  }
-
-  const sessionIdFromRequest = req?.cookies?.sessionId;
-  const sessionsStore = JSON.parse(readSessionsStore() || "{}");
-
-  const sessionData = sessionsStore[sessionIdFromRequest];
-
-  if (sessionData.code === code) {
-    storeSession({ ...sessionData, valid: true });
+  if (session && session.code === String(code)) {
+    storeSession({ ...session, valid: true });
     res.sendStatus(200);
     return;
   } else {
-    storeSession({ ...sessionData, time: 0 });
-    removeExpiredSessionsFromSessionStore();
     res.sendStatus(403);
     return;
   }
