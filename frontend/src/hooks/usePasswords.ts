@@ -6,7 +6,13 @@ import { Password, Passwords } from '../types/passwords'
 import { toEncrypt } from '../encryption/toEncrypt'
 import { toDecrypt } from '../encryption/toDecrypt'
 
-export function usePasswords(): {
+export interface UsePasswordsCallbacks {
+    setIsLoading: (value: boolean) => void
+    setLoadingMessage: (value: string) => void
+    setIsAuthPage: (value: boolean) => void
+}
+
+export function usePasswords(callbacks: UsePasswordsCallbacks): {
     passwords: Passwords
     setPasswords: (passwords: Passwords) => void
     addPassword: (password: Password) => void
@@ -17,6 +23,8 @@ export function usePasswords(): {
     setMasterPassword: (value: string | null) => void
     setSelectedPasswordId: (id: number | null) => void
 } {
+    const { setIsLoading, setIsAuthPage } = callbacks
+
     const [passwords, setPasswordsState] = useState<Passwords>([])
     const [masterPassword, setMasterPassword] = useState<string | null>(null)
     const [selectedPasswordId, setSelectedPasswordId] = useState<number | null>(
@@ -24,21 +32,25 @@ export function usePasswords(): {
     )
 
     useEffect(() => {
-        if (!masterPassword) {
-            return
-        }
+        ;(async () => {
+            const result = await fetchPasswords()
+            setIsLoading(false)
 
-        const callback = (data: any) => {
-            let result = []
+            if (result === 401 || result === 403) {
+                setIsAuthPage(true)
+                return
+            }
 
-            try {
-                result = JSON.parse(toDecrypt(data, masterPassword))
-            } catch (error) {}
+            if (typeof result === 'string') {
+                setIsAuthPage(false)
 
-            setPasswordsState(result)
-        }
-
-        fetchPasswords({ callback })
+                if (masterPassword) {
+                    setPasswordsState(
+                        JSON.parse(toDecrypt(result, masterPassword))
+                    )
+                }
+            }
+        })()
     }, [masterPassword])
 
     const setPasswords = (passwords: Passwords) => {

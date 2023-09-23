@@ -1,11 +1,11 @@
-import { FC, FormEventHandler, useEffect, useState } from 'react'
-import { checkAuthorization } from '../../api/checkAuthorization'
+import { FC, FormEventHandler, useState } from 'react'
 import { sendAuthCode } from '../../api/sendAuthCode'
 import { toStringOrUndefined } from '../../utils/toStringOrUndefined'
 import { Input } from '../../components/Input/Input'
 import { Button } from '../../components/Button/Button'
 import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
+import { getAuthCode } from '../../api/getAuthCode'
 
 export interface AuthPageProps {
     setIsAuthPage: (value: boolean) => void
@@ -13,10 +13,6 @@ export interface AuthPageProps {
 
 export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
     const [isError, setIsError] = useState<boolean>(false)
-
-    useEffect(() => {
-        checkAuthorization({ callback: (value) => setIsAuthPage(!value) })
-    }, [])
 
     const onFormSubmit: FormEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault()
@@ -38,11 +34,13 @@ export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
                     return
                 }
 
-                checkAuthorization({
-                    callback: (value) => setIsAuthPage(!value),
-                })
+                setIsAuthPage(false)
             },
         })
+    }
+
+    const onGetCodeButtonClick = () => {
+        getAuthCode()
     }
 
     if (isError) {
@@ -57,12 +55,15 @@ export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
     }
 
     return (
-        <form onSubmit={onFormSubmit}>
-            <Logo />
-            <Text size="title48">Авторизация</Text>
-            <Text>Пожалуйста, укажите код доступа</Text>
-            <Input autoFocus name="sessionCode" label="Code" type="text" />
-            <Button type="submit">Отправить</Button>
-        </form>
+        <>
+            <form onSubmit={onFormSubmit}>
+                <Logo />
+                <Text size="title48">Авторизация</Text>
+                <Text>Пожалуйста, укажите код доступа</Text>
+                <Input autoFocus name="sessionCode" label="Code" type="text" />
+                <Button type="submit">Отправить</Button>
+            </form>
+            <Button onClick={onGetCodeButtonClick}>Получить код</Button>
+        </>
     )
 }
