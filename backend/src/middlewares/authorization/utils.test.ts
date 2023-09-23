@@ -7,15 +7,7 @@ import {
   jest,
   test,
 } from "@jest/globals";
-import { Request, Response } from "express";
-
-const getResponseMock = (): Response => {
-  return {
-    cookie: jest.fn(),
-    status: jest.fn(),
-    end: jest.fn(),
-  } as unknown as Response;
-};
+import { Request } from "express";
 
 import {
   createNewSession,

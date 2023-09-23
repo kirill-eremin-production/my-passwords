@@ -11,7 +11,7 @@ export interface SessionData {
 }
 
 const storeDirPath = resolve(".", "store");
-const sessionsFilePath = resolve(storeDirPath, "sessions.txt");
+export const sessionsFilePath = resolve(storeDirPath, "sessions.txt");
 const encoding = "utf-8";
 
 /** При необходимости создает файл для хранения сессий */
@@ -47,6 +47,12 @@ export function storeSession(sessionData: SessionData) {
   sessionStore[sessionData.sessionId] = sessionData;
 
   writeSessionsStore(JSON.stringify(sessionStore, null, 4));
+}
+
+export function readSessionById(sessionId: string): SessionData | undefined {
+  const sessionStore = JSON.parse(readSessionsStore() || "{}");
+
+  return sessionStore[sessionId];
 }
 
 export function removeExpiredSessionsFromSessionStore() {
