@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import styles from './App.module.css'
 
 import { MasterPassword } from './pages/MasterPassword/MasterPassword'
@@ -10,6 +10,9 @@ import { CreateNewPassword } from './pages/CreateNewPassword/CreateNewPassword'
 import { AuthPage } from './pages/AuthPage/AuthPage'
 import { Password } from './types/passwords'
 import { LoadingPage } from './pages/LoadingPage/LoadingPage'
+import { QueryClient, QueryClientProvider } from 'react-query'
+
+const queryClient = new QueryClient()
 
 function App() {
     const [isLoading, setIsLoading] = useState(true)
@@ -90,7 +93,11 @@ function App() {
         page = <LoadingPage message={loadingMessage} />
     }
 
-    return <div className={styles.root}>{page}</div>
+    return (
+        <QueryClientProvider client={queryClient}>
+            <div className={styles.root}>{page}</div>
+        </QueryClientProvider>
+    )
 }
 
 export default App

@@ -26,7 +26,7 @@ export const List: FC<PasswordsListProps> = ({
                 onSelectListItem={onSelectPasswordFromList}
                 passwords={passwords}
             />
-            <Button onClick={onGoToCreateNewPasswordPage} type="main">
+            <Button onClick={onGoToCreateNewPasswordPage} theme="main">
                 Записать новый секрет
             </Button>
         </div>

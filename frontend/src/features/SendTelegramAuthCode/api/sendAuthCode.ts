@@ -1,4 +1,4 @@
-export const getAuthCode = async (): Promise<Response> => {
+export const sendAuthCode = async (): Promise<Response> => {
     return await fetch('/api/code', {
         method: 'POST',
         headers: new Headers({

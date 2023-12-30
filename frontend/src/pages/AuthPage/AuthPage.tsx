@@ -5,7 +5,7 @@ import { Input } from '../../components/Input/Input'
 import { Button } from '../../components/Button/Button'
 import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
-import { getAuthCode } from '../../api/getAuthCode'
+import { SendTelegramAuthCodeButton } from '../../features/SendTelegramAuthCode'
 
 export interface AuthPageProps {
     setIsAuthPage: (value: boolean) => void
@@ -39,10 +39,6 @@ export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
         })
     }
 
-    const onGetCodeButtonClick = () => {
-        getAuthCode()
-    }
-
     if (isError) {
         return (
             <>
@@ -63,7 +59,8 @@ export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
                 <Input autoFocus name="sessionCode" label="Code" type="text" />
                 <Button type="submit">Отправить</Button>
             </form>
-            <Button onClick={onGetCodeButtonClick}>Получить код</Button>
+
+            <SendTelegramAuthCodeButton />
         </>
     )
 }
