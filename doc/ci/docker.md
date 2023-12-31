@@ -12,3 +12,4 @@
 - `docker logs <container id>` - посмотреть логи контейнера
 - `docker exec -it <container id> /bin/bash` - подключиться к контейнеру
 - `docker kill <container id>` - остановить контейнер
+- `docker tag <hash> <name>` - установить tag
