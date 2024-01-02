@@ -15,7 +15,12 @@ export const PasswordsList: FC<PasswordsListProps> = ({
         <>
             {passwords.map(({ title }, id) => {
                 return (
-                    <Button onClick={() => onSelectListItem(id)} theme="second">
+                    <Button
+                        key={`${title}-${id}`}
+                        fullWidth
+                        onClick={() => onSelectListItem(id)}
+                        theme="second"
+                    >
                         {title}
                     </Button>
                 )

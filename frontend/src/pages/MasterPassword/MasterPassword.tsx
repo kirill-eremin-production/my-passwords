@@ -4,6 +4,8 @@ import { Input } from '../../components/Input/Input'
 import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
 
+import styles from './MasterPassword.module.css'
+
 export interface MasterPasswordProps {
     setMasterPassword: (value: string | null) => void
 }
@@ -28,17 +30,26 @@ export const MasterPassword: FC<MasterPasswordProps> = ({
 
     return (
         <form onSubmit={onFormSubmit}>
-            <Logo />
-            <Text size="title48">Авторизация</Text>
-            <Text>
-                Пожалуйста, укажите мастер-пароль от вашей коллекции секретов
-            </Text>
-            <Input
-                label="Мастер-пароль"
-                name="masterPassword"
-                type="password"
-            />
-            <Button>Использовать</Button>
+            <div className={styles.header}>
+                <Logo />
+                <Text size="title48">Авторизация</Text>
+                <Text>
+                    Пожалуйста, укажите мастер-пароль от вашей коллекции
+                    секретов
+                </Text>
+            </div>
+
+            <div className={styles.controls}>
+                <Input
+                    autoFocus
+                    label="Мастер-пароль"
+                    name="masterPassword"
+                    type="password"
+                />
+                <Button fullWidth type="submit">
+                    Использовать
+                </Button>
+            </div>
         </form>
     )
 }

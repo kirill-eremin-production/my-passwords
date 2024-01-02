@@ -7,6 +7,8 @@ import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
 import { SendTelegramAuthCodeButton } from '../../features/SendTelegramAuthCode'
 
+import styles from './AuthPage.module.css'
+
 export interface AuthPageProps {
     setIsAuthPage: (value: boolean) => void
 }
@@ -45,22 +47,36 @@ export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
                 <Logo />
                 <Text size="title48">Ошибка</Text>
                 <Text>Произошла ошибка. Пожалуйста, попробуйте еще раз.</Text>
-                <Button onClick={() => window.location.reload()}>Назад</Button>
+                <Button fullWidth onClick={() => window.location.reload()}>
+                    Назад
+                </Button>
             </>
         )
     }
 
     return (
-        <>
+        <div className={styles.root}>
             <form onSubmit={onFormSubmit}>
-                <Logo />
-                <Text size="title48">Авторизация</Text>
-                <Text>Пожалуйста, укажите код доступа</Text>
-                <Input autoFocus name="sessionCode" label="Code" type="text" />
-                <Button type="submit">Отправить</Button>
+                <div className={styles.header}>
+                    <Logo />
+                    <Text size="title48">Авторизация</Text>
+                    <Text>Пожалуйста, укажите код доступа</Text>
+                </div>
+
+                <div className={styles.controls}>
+                    <Input
+                        autoFocus
+                        name="sessionCode"
+                        label="Code"
+                        type="text"
+                    />
+                    <Button fullWidth type="submit">
+                        Отправить
+                    </Button>
+                </div>
             </form>
 
             <SendTelegramAuthCodeButton />
-        </>
+        </div>
     )
 }

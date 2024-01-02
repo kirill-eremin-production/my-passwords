@@ -1,0 +1,9 @@
+.header {
+    margin-bottom: 12px;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}

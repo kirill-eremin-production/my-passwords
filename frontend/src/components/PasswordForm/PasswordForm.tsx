@@ -3,6 +3,9 @@ import { Password } from '../../types/passwords'
 import { Input } from '../Input/Input'
 import { Button } from '../Button/Button'
 import { toStringOrUndefined } from '../../utils/toStringOrUndefined'
+import { CopyButton } from '../CopyButton/CopyButton'
+
+import styles from './PasswordForm.module.css'
 
 export interface PasswordFormProps {
     password: Password
@@ -32,26 +35,40 @@ export const PasswordForm: FC<PasswordFormProps> = ({ password, onSubmit }) => {
     }
 
     return (
-        <form onSubmit={onFormSubmit}>
-            <Input
-                name="title"
-                label="Название"
-                type="text"
-                defaultValue={title}
-            />
-            <Input
-                name="login"
-                label="Логин"
-                type="text"
-                defaultValue={login}
-            />
-            <Input
-                name="password"
-                label="Пароль"
-                type="text"
-                defaultValue={passwordValue}
-            />
-            <Button type="submit">Сохранить</Button>
+        <form className={styles.form} onSubmit={onFormSubmit}>
+            <div className={styles.row}>
+                <Input
+                    name="title"
+                    label="Название"
+                    type="text"
+                    defaultValue={title}
+                />
+                <CopyButton text={String(title)} />
+            </div>
+
+            <div className={styles.row}>
+                <Input
+                    name="login"
+                    label="Логин"
+                    type="text"
+                    defaultValue={login}
+                />
+                <CopyButton text={String(login)} />
+            </div>
+
+            <div className={styles.row}>
+                <Input
+                    name="password"
+                    label="Пароль"
+                    type="text"
+                    defaultValue={passwordValue}
+                />
+                <CopyButton text={String(passwordValue)} />
+            </div>
+
+            <Button fullWidth type="submit">
+                Сохранить
+            </Button>
         </form>
     )
 }

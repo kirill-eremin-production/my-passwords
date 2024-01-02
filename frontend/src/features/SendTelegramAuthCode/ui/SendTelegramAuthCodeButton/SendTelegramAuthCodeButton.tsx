@@ -21,7 +21,7 @@ export const SendTelegramAuthCodeButton: FC = () => {
 
     return (
         <div>
-            <Button isLoading={isLoading} onClick={onButtonClick}>
+            <Button fullWidth isLoading={isLoading} onClick={onButtonClick}>
                 Получить код
             </Button>
             {isSuccess ? (

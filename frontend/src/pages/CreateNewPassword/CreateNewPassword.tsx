@@ -24,7 +24,7 @@ export const CreateNewPassword: FC<CreateNewPasswordProps> = ({
             <Logo />
             <Text size="title36">Секрет</Text>
             <PasswordForm password={{}} onSubmit={onPasswordFormSubmit} />
-            <Button onClick={onGoBack} theme="second">
+            <Button fullWidth onClick={onGoBack} theme="second">
                 Назад
             </Button>
         </div>
