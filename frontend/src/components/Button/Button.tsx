@@ -14,19 +14,22 @@ export interface ButtonProps
     theme?: 'main' | 'second'
     onClick?: MouseEventHandler
     isLoading?: boolean
+    fullWidth?: boolean
 }
 
 export const Button: FC<ButtonProps> = ({
-    type,
+    type = 'button',
     children,
     theme = 'main',
     onClick = () => null,
+    fullWidth = false,
     isLoading,
 }) => {
     const styleClassName = `theme_${theme}`
 
     const classNames = cn(styles.root, styles[styleClassName], {
         [styles.disabled]: isLoading,
+        [styles.fullWidth]: fullWidth,
     })
 
     return (

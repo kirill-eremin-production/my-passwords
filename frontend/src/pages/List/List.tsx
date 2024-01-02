@@ -7,6 +7,8 @@ import { Button } from '../../components/Button/Button'
 import { PasswordsList } from '../../components/PasswordsList/PasswordsList'
 import { Text } from '../../components/Text/Text'
 
+import styles from './List.module.css'
+
 export interface PasswordsListProps {
     passwords: Passwords
     onSelectPasswordFromList: (id: number) => void
@@ -20,15 +22,24 @@ export const List: FC<PasswordsListProps> = ({
 }) => {
     return (
         <div>
-            <Logo />
-            <Text size="title36">Ваши секреты</Text>
-            <PasswordsList
-                onSelectListItem={onSelectPasswordFromList}
-                passwords={passwords}
-            />
-            <Button onClick={onGoToCreateNewPasswordPage} theme="main">
-                Записать новый секрет
-            </Button>
+            <div className={styles.header}>
+                <Logo />
+                <Text size="title36">Ваши секреты</Text>
+            </div>
+
+            <div className={styles.list}>
+                <PasswordsList
+                    onSelectListItem={onSelectPasswordFromList}
+                    passwords={passwords}
+                />
+                <Button
+                    fullWidth
+                    onClick={onGoToCreateNewPasswordPage}
+                    theme="main"
+                >
+                    Записать новый секрет
+                </Button>
+            </div>
         </div>
     )
 }

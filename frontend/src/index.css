@@ -38,7 +38,7 @@ code {
     --main-button-error-background-color: #cc0000;
 
     --second-button-text-color: black;
-    --second-button-background-color: #f5f5f5;
+    --second-button-background-color: rgb(240, 240, 240);
 
     --main-text-color: black;
 }
