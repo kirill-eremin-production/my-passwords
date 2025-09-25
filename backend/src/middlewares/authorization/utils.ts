@@ -1,4 +1,5 @@
 import { Request } from "express";
+import { randomBytes } from "crypto";
 
 import {
   readSessionsStore,
@@ -38,11 +39,13 @@ export function createNewSession(): string {
 }
 
 /**
- * Generates a unique random sessionId
+ * Генерирует криптографически стойкий уникальный sessionId
  */
 export function generateSessionId(): string {
-  const time = new Date().getTime();
-  const randomNumber = Math.random();
-
-  return `${time}-${randomNumber}`;
+  // Криптографически стойкий генератор (32 байта = 256 бит)
+  const randomId = randomBytes(32).toString('hex');
+  const timestamp = Date.now().toString(36); // Компактное представление времени
+  
+  // Формат: timestamp-randomId для удобства отладки и сортировки
+  return `${timestamp}-${randomId}`;
 }

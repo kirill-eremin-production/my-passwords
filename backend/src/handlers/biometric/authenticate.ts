@@ -3,16 +3,23 @@ import { BiometricAuthenticationRequest } from "../../types/biometric";
 import {
   getBiometricCredentialById,
   getChallengeBySessionId,
-  removeChallenge
+  removeChallenge,
+  updateBiometricCredentialCounter
 } from "../../biometricStore";
 import { storeSession } from "../../sessionsStore";
 import { generateSessionId } from "../../middlewares/authorization/utils";
+import {
+  verifyWebAuthnSignature,
+  validateWebAuthnClientData,
+  extractCounterFromAuthenticatorData,
+  getExpectedOrigin
+} from "../../utils/webauthn";
 
 /**
  * Аутентификация с помощью биометрических данных
  * Проверяет WebAuthn assertion и возвращает мастер-пароль для расшифровки данных
  */
-export function authenticateWithBiometric(req: Request, res: Response) {
+export async function authenticateWithBiometric(req: Request, res: Response) {
   const authData: BiometricAuthenticationRequest = req.body.data;
   
   if (!authData) {
@@ -36,22 +43,76 @@ export function authenticateWithBiometric(req: Request, res: Response) {
       return;
     }
 
-    // TODO: Здесь должна быть полная проверка WebAuthn assertion
-    // Для MVP упрощаем проверку - считаем что если credential найден, то аутентификация успешна
-    
-    // Проверяем базовые данные
-    const clientData = JSON.parse(Buffer.from(clientDataJSON, 'base64').toString());
-    
-    if (clientData.type !== 'webauthn.get') {
-      res.status(400).json({ error: "Неверный тип операции WebAuthn" });
+    // Получаем challenge для текущей сессии
+    const sessionId = req.cookies?.sessionId;
+    if (!sessionId) {
+      res.status(401).json({ error: "Отсутствует sessionId" });
       return;
     }
 
-    // В production здесь должна быть проверка:
-    // 1. Проверка challenge
-    // 2. Проверка origin
-    // 3. Проверка подписи с использованием публичного ключа
-    // 4. Проверка и обновление счетчика
+    const challengeData = getChallengeBySessionId(sessionId);
+    if (!challengeData) {
+      res.status(400).json({ error: "Отсутствует challenge для данной сессии" });
+      return;
+    }
+
+    const expectedOrigin = getExpectedOrigin();
+    
+    // Проверяем базовые данные WebAuthn
+    const clientDataValidation = validateWebAuthnClientData(
+      clientDataJSON,
+      challengeData.challenge,
+      expectedOrigin
+    );
+    
+    if (!clientDataValidation.isValid) {
+      res.status(400).json({ error: clientDataValidation.error });
+      return;
+    }
+
+    // Извлекаем counter из authenticatorData для проверки replay атак
+    const newCounter = extractCounterFromAuthenticatorData(authenticatorData);
+    if (newCounter === -1) {
+      res.status(400).json({ error: "Ошибка извлечения counter из authenticatorData" });
+      return;
+    }
+
+    // Проверка counter для защиты от replay атак
+    if (newCounter <= credential.counter) {
+      console.warn(`Возможная replay атака: новый counter (${newCounter}) <= старого (${credential.counter}) для credential ${credentialId}`);
+      res.status(400).json({ error: "Обнаружена возможная replay атака" });
+      return;
+    }
+
+    // ПОЛНАЯ ПРОВЕРКА WEBAUTHN ПОДПИСИ
+    try {
+      const verificationResult = await verifyWebAuthnSignature(
+        credentialId,
+        authenticatorData,
+        clientDataJSON,
+        signature,
+        challengeData.challenge,
+        credential,
+        expectedOrigin
+      );
+
+      if (!verificationResult.verified) {
+        console.error("WebAuthn signature verification failed:", verificationResult);
+        res.status(403).json({ error: "Неверная подпись WebAuthn" });
+        return;
+      }
+
+      // Обновляем counter после успешной верификации
+      updateBiometricCredentialCounter(credentialId, verificationResult.authenticationInfo.newCounter);
+
+    } catch (verificationError) {
+      console.error("Ошибка верификации WebAuthn:", verificationError);
+      res.status(500).json({ error: "Ошибка верификации подписи WebAuthn" });
+      return;
+    }
+
+    // Удаляем использованный challenge
+    removeChallenge(sessionId);
 
     // Мастер-пароль больше НЕ расшифровывается на сервере для безопасности!
     // Теперь он получается только локально на клиенте.

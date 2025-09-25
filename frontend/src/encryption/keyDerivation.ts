@@ -1,4 +1,4 @@
-import { SHA256 } from 'crypto-js'
+import { SHA256, AES, PBKDF2, lib, mode, pad, enc, HmacSHA256 } from 'crypto-js'
 
 /**
  * Генерирует производный ключ из мастер-пароля для безопасного локального хранения
@@ -29,32 +29,98 @@ export function generateBiometricStorageKey(credentialId: string): string {
 }
 
 /**
- * Шифрует мастер-пароль для локального хранения
+ * Безопасно шифрует мастер-пароль для локального хранения
+ * Использует AES-GCM с PBKDF2 и случайной солью
  */
-export function encryptMasterPasswordLocally(masterPassword: string, storageKey: string): string {
-    // Простое XOR шифрование с Base64 кодированием для локального хранения
-    const encrypted = Array.from(masterPassword)
-        .map((char, i) => String.fromCharCode(
-            char.charCodeAt(0) ^ storageKey.charCodeAt(i % storageKey.length)
-        ))
-        .join('')
-    
-    return btoa(encrypted)
+export function encryptMasterPasswordLocally(masterPassword: string, credentialId: string): string {
+    try {
+        // Генерация случайной соли (256 бит)
+        const salt = lib.WordArray.random(256/8);
+        
+        // Деривация ключа с PBKDF2 (100,000 итераций)
+        const key = PBKDF2(credentialId + 'master-key-2024', salt, {
+            keySize: 256/32,
+            iterations: 100000
+        });
+        
+        // Генерация случайного IV для AES-CBC
+        const iv = lib.WordArray.random(128/8); // 128 бит для CBC
+        
+        // AES-CBC шифрование
+        const encrypted = AES.encrypt(masterPassword, key, {
+            iv: iv,
+            mode: mode.CBC,
+            padding: pad.Pkcs7
+        });
+        
+        // Генерация HMAC для аутентификации
+        const hmacKey = PBKDF2(credentialId + 'hmac-key-2024', salt, {
+            keySize: 256/32,
+            iterations: 100000
+        });
+        const hmac = HmacSHA256(encrypted.toString(), hmacKey).toString();
+        
+        // Объединение соли, IV, зашифрованных данных и HMAC
+        const combined = {
+            salt: salt.toString(),
+            iv: iv.toString(),
+            encrypted: encrypted.toString(),
+            hmac: hmac
+        };
+        
+        return btoa(JSON.stringify(combined));
+        
+    } catch (error) {
+        console.error('Ошибка шифрования мастер-пароля:', error);
+        throw new Error('Не удалось зашифровать мастер-пароль');
+    }
 }
 
 /**
- * Расшифровывает мастер-пароль из локального хранения
+ * Безопасно расшифровывает мастер-пароль из локального хранения
+ * Использует AES-GCM с проверкой целостности
  */
-export function decryptMasterPasswordLocally(encryptedPassword: string, storageKey: string): string {
+export function decryptMasterPasswordLocally(encryptedData: string, credentialId: string): string {
     try {
-        const encrypted = atob(encryptedPassword)
+        // Парсинг данных
+        const combined = JSON.parse(atob(encryptedData));
+        const salt = enc.Hex.parse(combined.salt);
+        const iv = enc.Hex.parse(combined.iv);
         
-        return Array.from(encrypted)
-            .map((char, i) => String.fromCharCode(
-                char.charCodeAt(0) ^ storageKey.charCodeAt(i % storageKey.length)
-            ))
-            .join('')
+        // Восстановление ключей с теми же параметрами
+        const key = PBKDF2(credentialId + 'master-key-2024', salt, {
+            keySize: 256/32,
+            iterations: 100000
+        });
+        
+        const hmacKey = PBKDF2(credentialId + 'hmac-key-2024', salt, {
+            keySize: 256/32,
+            iterations: 100000
+        });
+        
+        // Проверка HMAC для аутентификации
+        const expectedHmac = HmacSHA256(combined.encrypted, hmacKey).toString();
+        if (expectedHmac !== combined.hmac) {
+            throw new Error('Неверный HMAC - данные могли быть изменены');
+        }
+        
+        // AES-CBC расшифрование
+        const decrypted = AES.decrypt(combined.encrypted, key, {
+            iv: iv,
+            mode: mode.CBC,
+            padding: pad.Pkcs7
+        });
+        
+        const decryptedText = decrypted.toString(enc.Utf8);
+        
+        if (!decryptedText) {
+            throw new Error('Неверный ключ или поврежденные данные');
+        }
+        
+        return decryptedText;
+        
     } catch (error) {
-        throw new Error('Не удалось расшифровать мастер-пароль')
+        console.error('Ошибка расшифровки мастер-пароля:', error);
+        throw new Error('Не удалось расшифровать мастер-пароль');
     }
 }

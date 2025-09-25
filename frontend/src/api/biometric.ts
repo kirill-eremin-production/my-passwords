@@ -10,42 +10,44 @@ import {
 import { registerBiometric as registerBiometricAPI } from './biometricRegister'
 import { authenticateWithBiometric as authenticateBiometricAPI } from './biometricAuthenticate'
 import {
-    generateBiometricStorageKey,
     encryptMasterPasswordLocally,
     decryptMasterPasswordLocally
 } from '../encryption/keyDerivation'
+import { secureStorage } from '../utils/secureStorage'
 
 const STORAGE_KEY = 'biometric_credentials'
 const MASTER_PASSWORD_STORAGE_KEY = 'biometric_master_passwords'
 
 /**
- * Сохраняет учетные данные в localStorage
+ * Сохраняет учетные данные в безопасное хранилище
  */
-const saveCredentials = (credentials: StoredCredential[]): void => {
+const saveCredentials = async (credentials: StoredCredential[]): Promise<void> => {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials))
+        await secureStorage.storeEncryptedData(STORAGE_KEY, JSON.stringify(credentials))
     } catch (error) {
         console.error('Ошибка сохранения учетных данных:', error)
+        throw error
     }
 }
 
 /**
- * Сохраняет зашифрованные мастер-пароли в localStorage
+ * Сохраняет зашифрованные мастер-пароли в безопасное хранилище
  */
-const saveMasterPasswords = (masterPasswords: Record<string, string>): void => {
+const saveMasterPasswords = async (masterPasswords: Record<string, string>): Promise<void> => {
     try {
-        localStorage.setItem(MASTER_PASSWORD_STORAGE_KEY, JSON.stringify(masterPasswords))
+        await secureStorage.storeEncryptedData(MASTER_PASSWORD_STORAGE_KEY, JSON.stringify(masterPasswords))
     } catch (error) {
         console.error('Ошибка сохранения зашифрованных мастер-паролей:', error)
+        throw error
     }
 }
 
 /**
- * Загружает зашифрованные мастер-пароли из localStorage
+ * Загружает зашифрованные мастер-пароли из безопасного хранилища
  */
-const loadMasterPasswords = (): Record<string, string> => {
+const loadMasterPasswords = async (): Promise<Record<string, string>> => {
     try {
-        const stored = localStorage.getItem(MASTER_PASSWORD_STORAGE_KEY)
+        const stored = await secureStorage.getEncryptedData(MASTER_PASSWORD_STORAGE_KEY)
         return stored ? JSON.parse(stored) : {}
     } catch (error) {
         console.error('Ошибка загрузки зашифрованных мастер-паролей:', error)
@@ -54,11 +56,11 @@ const loadMasterPasswords = (): Record<string, string> => {
 }
 
 /**
- * Загружает учетные данные из localStorage
+ * Загружает учетные данные из безопасного хранилища
  */
-const loadCredentials = (): StoredCredential[] => {
+const loadCredentials = async (): Promise<StoredCredential[]> => {
     try {
-        const stored = localStorage.getItem(STORAGE_KEY)
+        const stored = await secureStorage.getEncryptedData(STORAGE_KEY)
         return stored ? JSON.parse(stored) : []
     } catch (error) {
         console.error('Ошибка загрузки учетных данных:', error)
@@ -69,8 +71,8 @@ const loadCredentials = (): StoredCredential[] => {
 /**
  * Проверяет, зарегистрированы ли биометрические учетные данные
  */
-export const hasBiometricCredentials = (): boolean => {
-    const credentials = loadCredentials()
+export const hasBiometricCredentials = async (): Promise<boolean> => {
+    const credentials = await loadCredentials()
     return credentials.length > 0
 }
 
@@ -132,19 +134,18 @@ export const registerBiometric = async (username: string = 'user', masterPasswor
             createdAt: new Date().toISOString()
         }
 
-        const existingCredentials = loadCredentials()
+        const existingCredentials = await loadCredentials()
         const updatedCredentials = [...existingCredentials, storedCredential]
-        saveCredentials(updatedCredentials)
+        await saveCredentials(updatedCredentials)
 
         // Если мастер-пароль передан, сохраняем его локально в зашифрованном виде
         if (masterPassword) {
-            const storageKey = generateBiometricStorageKey(credential.id)
-            const encryptedMasterPassword = encryptMasterPasswordLocally(masterPassword, storageKey)
+            const encryptedMasterPassword = encryptMasterPasswordLocally(masterPassword, credential.id)
             
-            // Сохраняем зашифрованный мастер-пароль в localStorage
-            const masterPasswords = loadMasterPasswords()
+            // Сохраняем зашифрованный мастер-пароль в безопасное хранилище
+            const masterPasswords = await loadMasterPasswords()
             masterPasswords[credential.id] = encryptedMasterPassword
-            saveMasterPasswords(masterPasswords)
+            await saveMasterPasswords(masterPasswords)
         }
 
         // Отправляем только метаданные на сервер (БЕЗ мастер-пароля!)
@@ -187,7 +188,7 @@ export const authenticateWithBiometric = async (): Promise<{ success: boolean; m
         throw new Error('Платформенный аутентификатор недоступен')
     }
 
-    const credentials = loadCredentials()
+    const credentials = await loadCredentials()
     if (credentials.length === 0) {
         throw new Error('Биометрические учетные данные не найдены')
     }
@@ -213,8 +214,8 @@ export const authenticateWithBiometric = async (): Promise<{ success: boolean; m
             throw new Error('Аутентификация не удалась')
         }
 
-        // Получаем мастер-пароль из локального хранения
-        const masterPasswords = loadMasterPasswords()
+        // Получаем мастер-пароль из безопасного хранения
+        const masterPasswords = await loadMasterPasswords()
         const encryptedMasterPassword = masterPasswords[assertion.id]
         
         if (!encryptedMasterPassword) {
@@ -222,8 +223,7 @@ export const authenticateWithBiometric = async (): Promise<{ success: boolean; m
         }
 
         // Расшифровываем мастер-пароль локально
-        const storageKey = generateBiometricStorageKey(assertion.id)
-        const masterPassword = decryptMasterPasswordLocally(encryptedMasterPassword, storageKey)
+        const masterPassword = decryptMasterPasswordLocally(encryptedMasterPassword, assertion.id)
 
         // Приводим тип response к правильному
         const response = assertion.response as AuthenticatorAssertionResponse
@@ -260,22 +260,23 @@ export const authenticateWithBiometric = async (): Promise<{ success: boolean; m
 /**
  * Удаляет все биометрические учетные данные и зашифрованные мастер-пароли
  */
-export const clearBiometricCredentials = (): void => {
+export const clearBiometricCredentials = async (): Promise<void> => {
     try {
-        localStorage.removeItem(STORAGE_KEY)
-        localStorage.removeItem(MASTER_PASSWORD_STORAGE_KEY)
+        await secureStorage.removeData(STORAGE_KEY)
+        await secureStorage.removeData(MASTER_PASSWORD_STORAGE_KEY)
     } catch (error) {
         console.error('Ошибка удаления учетных данных:', error)
+        throw error
     }
 }
 
 /**
  * Получает информацию о зарегистрированных учетных данных
  */
-export const getBiometricCredentialsInfo = (): { count: number; lastCreated?: string } => {
-    const credentials = loadCredentials()
-    const lastCreated = credentials.length > 0 
-        ? credentials[credentials.length - 1].createdAt 
+export const getBiometricCredentialsInfo = async (): Promise<{ count: number; lastCreated?: string }> => {
+    const credentials = await loadCredentials()
+    const lastCreated = credentials.length > 0
+        ? credentials[credentials.length - 1].createdAt
         : undefined
 
     return {

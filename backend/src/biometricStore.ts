@@ -1,13 +1,13 @@
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync } from "fs";
 import { resolve } from "path";
 import { createHash } from "crypto";
 
 import { BiometricCredential, WebAuthnChallenge } from "./types/biometric";
+import { encryptedStore } from "./utils/encryptedStore";
 
 const storeDirPath = resolve(".", "store");
 const biometricFilePath = resolve(storeDirPath, "biometric.txt");
 const challengesFilePath = resolve(storeDirPath, "challenges.txt");
-const encoding = "utf-8";
 
 // УДАЛЕНЫ функции шифрования мастер-пароля для безопасности!
 // Мастер-пароль теперь хранится только локально на клиенте.
@@ -17,34 +17,59 @@ const encoding = "utf-8";
  */
 export function prepareBiometricStore() {
   prepareStoreDir();
-
-  if (!existsSync(biometricFilePath)) {
-    writeFileSync(biometricFilePath, "{}", { encoding });
+  
+  // Валидация ключа шифрования
+  if (!encryptedStore.validateEncryptionKey()) {
+    throw new Error('Невалидный ключ шифрования для биометрических данных!');
   }
 
-  if (!existsSync(challengesFilePath)) {
-    writeFileSync(challengesFilePath, "{}", { encoding });
+  // Миграция существующих файлов в зашифрованный формат
+  if (existsSync(biometricFilePath)) {
+    try {
+      encryptedStore.migrateToEncrypted(biometricFilePath);
+    } catch (error) {
+      console.error('⚠️ Ошибка миграции биометрического файла:', error);
+    }
+  }
+
+  if (existsSync(challengesFilePath)) {
+    try {
+      encryptedStore.migrateToEncrypted(challengesFilePath);
+    } catch (error) {
+      console.error('⚠️ Ошибка миграции файла challenges:', error);
+    }
   }
 }
 
 function prepareStoreDir() {
   if (!existsSync(storeDirPath)) {
-    require("fs").mkdirSync(storeDirPath);
+    require("fs").mkdirSync(storeDirPath, { recursive: true });
   }
 }
 
 /**
- * Читает хранилище биометрических данных
+ * Читает зашифрованное хранилище биометрических данных
  */
 export function readBiometricStore(): string {
-  return readFileSync(biometricFilePath, { encoding });
+  try {
+    const data = encryptedStore.readEncrypted(biometricFilePath);
+    return data || "{}";  // Возвращаем пустой объект если файл пустой
+  } catch (error) {
+    console.error('Ошибка чтения зашифрованного биометрического хранилища:', error);
+    return "{}";
+  }
 }
 
 /**
- * Записывает в хранилище биометрических данных
+ * Записывает в зашифрованное хранилище биометрических данных
  */
 export function writeBiometricStore(data: string) {
-  writeFileSync(biometricFilePath, data, { encoding });
+  try {
+    encryptedStore.writeEncrypted(biometricFilePath, data);
+  } catch (error) {
+    console.error('Ошибка записи в зашифрованное биометрическое хранилище:', error);
+    throw error;
+  }
 }
 
 /**
@@ -86,17 +111,41 @@ export function removeBiometricCredential(credentialId: string): boolean {
 }
 
 /**
- * Читает хранилище challenges
+ * Обновляет счетчик для биометрических учетных данных
  */
-export function readChallengesStore(): string {
-  return readFileSync(challengesFilePath, { encoding });
+export function updateBiometricCredentialCounter(credentialId: string, newCounter: number): boolean {
+  const store = JSON.parse(readBiometricStore() || "{}");
+  if (store[credentialId]) {
+    store[credentialId].counter = newCounter;
+    writeBiometricStore(JSON.stringify(store, null, 4));
+    return true;
+  }
+  return false;
 }
 
 /**
- * Записывает в хранилище challenges
+ * Читает зашифрованное хранилище challenges
+ */
+export function readChallengesStore(): string {
+  try {
+    const data = encryptedStore.readEncrypted(challengesFilePath);
+    return data || "{}";  // Возвращаем пустой объект если файл пустой
+  } catch (error) {
+    console.error('Ошибка чтения зашифрованного хранилища challenges:', error);
+    return "{}";
+  }
+}
+
+/**
+ * Записывает в зашифрованное хранилище challenges
  */
 export function writeChallengesStore(data: string) {
-  writeFileSync(challengesFilePath, data, { encoding });
+  try {
+    encryptedStore.writeEncrypted(challengesFilePath, data);
+  } catch (error) {
+    console.error('Ошибка записи в зашифрованное хранилище challenges:', error);
+    throw error;
+  }
 }
 
 /**
