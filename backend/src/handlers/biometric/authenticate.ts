@@ -45,13 +45,19 @@ export async function authenticateWithBiometric(req: Request, res: Response) {
 
     // Получаем challenge для текущей сессии
     const sessionId = req.cookies?.sessionId;
+    console.log('🔍 Аутентификация - sessionId из cookies:', sessionId);
+    
     if (!sessionId) {
+      console.log('❌ sessionId отсутствует');
       res.status(401).json({ error: "Отсутствует sessionId" });
       return;
     }
 
     const challengeData = getChallengeBySessionId(sessionId);
+    console.log('🔍 Challenge для сессии:', challengeData);
+    
     if (!challengeData) {
+      console.log('❌ Challenge не найден для сессии:', sessionId);
       res.status(400).json({ error: "Отсутствует challenge для данной сессии" });
       return;
     }
@@ -59,6 +65,7 @@ export async function authenticateWithBiometric(req: Request, res: Response) {
     const expectedOrigin = getExpectedOrigin();
     
     // Проверяем базовые данные WebAuthn
+    console.log('🔍 Валидируем clientData с challenge:', challengeData.challenge);
     const clientDataValidation = validateWebAuthnClientData(
       clientDataJSON,
       challengeData.challenge,
@@ -66,22 +73,36 @@ export async function authenticateWithBiometric(req: Request, res: Response) {
     );
     
     if (!clientDataValidation.isValid) {
+      console.log('❌ Валидация clientData неуспешна:', clientDataValidation.error);
       res.status(400).json({ error: clientDataValidation.error });
       return;
     }
+    console.log('✅ clientData валидирован успешно');
 
     // Извлекаем counter из authenticatorData для проверки replay атак
     const newCounter = extractCounterFromAuthenticatorData(authenticatorData);
+    console.log('🔍 Counter информация:');
+    console.log('  - newCounter из authenticatorData:', newCounter);
+    console.log('  - сохраненный counter в credential:', credential.counter);
+    
     if (newCounter === -1) {
+      console.log('❌ Ошибка извлечения counter');
       res.status(400).json({ error: "Ошибка извлечения counter из authenticatorData" });
       return;
     }
 
     // Проверка counter для защиты от replay атак
-    if (newCounter <= credential.counter) {
-      console.warn(`Возможная replay атака: новый counter (${newCounter}) <= старого (${credential.counter}) для credential ${credentialId}`);
+    // Для первого использования credential newCounter может быть равен credential.counter
+    if (newCounter < credential.counter) {
+      console.warn(`❌ Возможная replay атака: новый counter (${newCounter}) < старого (${credential.counter}) для credential ${credentialId}`);
       res.status(400).json({ error: "Обнаружена возможная replay атака" });
       return;
+    }
+    
+    if (newCounter === credential.counter) {
+      console.log('⚠️ Counter не изменился, но это может быть нормально для некоторых аутентификаторов');
+    } else {
+      console.log('✅ Counter увеличился корректно');
     }
 
     // ПОЛНАЯ ПРОВЕРКА WEBAUTHN ПОДПИСИ

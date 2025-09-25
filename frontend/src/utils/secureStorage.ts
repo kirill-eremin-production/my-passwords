@@ -121,27 +121,130 @@ export class SecureStorage {
   }
 
   /**
-   * Генерирует device key на основе характеристик браузера
+   * Генерирует device key на основе характеристик браузера и случайного компонента
+   * Использует Web Crypto API для безопасности
    */
-  private generateDeviceKey(): string {
+  private async generateDeviceKey(): Promise<string> {
+    console.log('🔄 generateDeviceKey: начинаем генерацию...');
+    
+    // Получаем или создаем случайный seed для данного устройства из безопасного IndexedDB
+    console.log('🔄 Получаем randomSeed...');
+    let randomSeed = await this.getSecureRandomSeed();
+    console.log('✅ RandomSeed получен:', randomSeed.substring(0, 10) + '...');
+    
     const characteristics = [
       navigator.userAgent,
       navigator.language,
       window.screen.width,
       window.screen.height,
       new Date().getTimezoneOffset(),
-      navigator.hardwareConcurrency || 'unknown'
+      navigator.hardwareConcurrency || 'unknown',
+      randomSeed // Добавляем уникальный случайный компонент
     ].join('|');
+    console.log('✅ Характеристики устройства собраны');
 
-    // Используем простое хеширование для создания стабильного ключа
-    let hash = 0;
-    for (let i = 0; i < characteristics.length; i++) {
-      const char = characteristics.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Конвертируем в 32bit integer
+    // Используем Web Crypto API для создания криптографически стойкого ключа
+    try {
+      console.log('🔄 Создаем хеш через Web Crypto API...');
+      const encoder = new TextEncoder();
+      const data = encoder.encode(characteristics);
+      
+      // Создаем хеш с помощью Web Crypto API
+      const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      const deviceKey = `device-key-${hashHex.substring(0, 16)}-2024`;
+      console.log('✅ DeviceKey сгенерирован успешно:', deviceKey.substring(0, 20) + '...');
+      return deviceKey;
+    } catch (error) {
+      console.error('❌ Ошибка генерации device key, используем fallback:', error);
+      // Fallback на простое хеширование только в случае ошибки
+      let hash = 0;
+      for (let i = 0; i < characteristics.length; i++) {
+        const char = characteristics.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      const fallbackKey = `device-key-${Math.abs(hash)}-2024`;
+      console.log('✅ Fallback deviceKey сгенерирован:', fallbackKey);
+      return fallbackKey;
     }
+  }
+
+  /**
+   * Безопасно получает или создает случайный seed из IndexedDB
+   */
+  private async getSecureRandomSeed(): Promise<string> {
+    const SEED_KEY = 'device-random-seed';
     
-    return `device-key-${Math.abs(hash)}-2024`;
+    try {
+      // Пытаемся получить существующий seed из IndexedDB БЕЗ шифрования
+      // чтобы избежать циклической зависимости
+      const existingSeed = await this.getRawData(SEED_KEY);
+      if (existingSeed) {
+        return existingSeed;
+      }
+
+      // Генерируем новый криптографически стойкий seed
+      const randomArray = new Uint32Array(4);
+      window.crypto.getRandomValues(randomArray);
+      const newSeed = Array.from(randomArray).join('-');
+      
+      // Сохраняем в IndexedDB БЕЗ шифрования (только для seed)
+      await this.storeRawData(SEED_KEY, newSeed);
+      
+      return newSeed;
+    } catch (error) {
+      console.error('Ошибка работы с безопасным seed:', error);
+      // Fallback: генерируем временный seed (не сохраняется)
+      const randomArray = new Uint32Array(4);
+      window.crypto.getRandomValues(randomArray);
+      return Array.from(randomArray).join('-');
+    }
+  }
+
+  /**
+   * Сохраняет данные в IndexedDB БЕЗ шифрования (только для внутренних нужд)
+   */
+  private async storeRawData(key: string, data: string): Promise<void> {
+    const db = await this.openDB();
+    const transaction = db.transaction([this.storeName], 'readwrite');
+    const store = transaction.objectStore(this.storeName);
+    
+    const item: SecureStorageItem = {
+      id: key,
+      data: data, // Сохраняем как есть, без шифрования
+      timestamp: Date.now()
+    };
+
+    await new Promise<void>((resolve, reject) => {
+      const request = store.put(item);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(new Error('Ошибка записи в IndexedDB'));
+    });
+  }
+
+  /**
+   * Загружает данные из IndexedDB БЕЗ расшифровки (только для внутренних нужд)
+   */
+  private async getRawData(key: string): Promise<string | null> {
+    try {
+      const db = await this.openDB();
+      const transaction = db.transaction([this.storeName], 'readonly');
+      const store = transaction.objectStore(this.storeName);
+
+      const item = await new Promise<SecureStorageItem | null>((resolve, reject) => {
+        const request = store.get(key);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(new Error('Ошибка чтения из IndexedDB'));
+      });
+
+      return item ? item.data : null;
+    } catch (error) {
+      console.error('Ошибка загрузки raw данных:', error);
+      return null;
+    }
   }
 
   /**
@@ -149,26 +252,47 @@ export class SecureStorage {
    */
   async storeEncryptedData(key: string, data: string): Promise<void> {
     try {
-      const deviceKey = this.generateDeviceKey();
-      const doubleEncrypted = await this.encryptWithDeviceKey(data, deviceKey);
+      console.log('🔄 SecureStorage.storeEncryptedData: начинаем сохранение для ключа:', key);
       
+      console.log('🔄 Генерируем deviceKey...');
+      const deviceKey = await this.generateDeviceKey();
+      console.log('✅ DeviceKey сгенерирован');
+      
+      console.log('🔄 Шифруем данные...');
+      const doubleEncrypted = await this.encryptWithDeviceKey(data, deviceKey);
+      console.log('✅ Данные зашифрованы');
+      
+      console.log('🔄 Открываем базу данных...');
       const db = await this.openDB();
+      console.log('✅ База данных открыта');
+      
+      console.log('🔄 Создаем транзакцию...');
       const transaction = db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
+      console.log('✅ Транзакция создана');
       
       const item: SecureStorageItem = {
         id: key,
         data: doubleEncrypted,
         timestamp: Date.now()
       };
+      console.log('🔄 Записываем данные в IndexedDB...');
 
       await new Promise<void>((resolve, reject) => {
         const request = store.put(item);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(new Error('Ошибка записи в IndexedDB'));
+        request.onsuccess = () => {
+          console.log('✅ Данные успешно записаны в IndexedDB');
+          resolve();
+        };
+        request.onerror = () => {
+          console.error('❌ Ошибка записи в IndexedDB:', request.error);
+          reject(new Error('Ошибка записи в IndexedDB'));
+        };
       });
+      
+      console.log('🎉 SecureStorage.storeEncryptedData: сохранение завершено');
     } catch (error) {
-      console.error('Ошибка сохранения в SecureStorage:', error);
+      console.error('❌ SecureStorage.storeEncryptedData: ошибка сохранения:', error);
       throw error;
     }
   }
@@ -192,7 +316,7 @@ export class SecureStorage {
         return null;
       }
 
-      const deviceKey = this.generateDeviceKey();
+      const deviceKey = await this.generateDeviceKey();
       return await this.decryptWithDeviceKey(item.data, deviceKey);
     } catch (error) {
       console.error('Ошибка загрузки из SecureStorage:', error);

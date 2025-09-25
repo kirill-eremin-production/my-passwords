@@ -46,9 +46,14 @@ export function usePasswords(callbacks: UsePasswordsCallbacks): {
                 setIsAuthPage(false)
 
                 if (masterPassword) {
-                    setPasswordsState(
-                        JSON.parse(toDecrypt(result, masterPassword))
-                    )
+                    // Если данные пустые, инициализируем пустым массивом
+                    if (result === '') {
+                        setPasswordsState([])
+                    } else {
+                        setPasswordsState(
+                            JSON.parse(toDecrypt(result, masterPassword))
+                        )
+                    }
                 }
             }
         })()

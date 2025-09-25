@@ -41,7 +41,7 @@ export const BiometricButton: FC<BiometricButtonProps> = ({
             setCompatibilityInfo(compInfo)
             
             if (supported) {
-                setHasCredentials(hasBiometricCredentials())
+                setHasCredentials(await hasBiometricCredentials())
                 setBiometricType(getAppleBiometricType())
             }
         }
@@ -50,15 +50,21 @@ export const BiometricButton: FC<BiometricButtonProps> = ({
     }, [])
 
     const handleBiometricAuth = async () => {
+        console.log('🎯 handleBiometricAuth вызван')
+        console.log('Параметры:', { isSupported, hasCredentials, masterPassword: !!masterPassword })
+        
         if (!isSupported) {
+            console.log('❌ Биометрия не поддерживается')
             onError?.('Биометрическая аутентификация не поддерживается')
             return
         }
 
+        console.log('🔄 Устанавливаем isLoading = true')
         setIsLoading(true)
 
         try {
             if (hasCredentials) {
+                console.log('🔄 Режим аутентификации (есть учетные данные)')
                 // Аутентификация - получаем мастер-пароль с сервера
                 const result = await authenticateWithBiometric()
                 if (result.success && result.masterPassword) {
@@ -67,20 +73,46 @@ export const BiometricButton: FC<BiometricButtonProps> = ({
                     onError?.('Не удалось получить мастер-пароль')
                 }
             } else {
+                console.log('🔄 Режим регистрации (нет учетных данных)')
                 // Первичная регистрация - отправляем мастер-пароль на сервер
                 if (!masterPassword) {
+                    console.log('❌ Мастер-пароль не предоставлен')
                     onError?.('Мастер-пароль не предоставлен для регистрации биометрии')
                     return
                 }
                 
-                await registerBiometric('user', masterPassword)
+                console.log('🔄 Вызываем registerBiometric...')
+                const result = await registerBiometric('user', masterPassword)
+                console.log('✅ registerBiometric завершен, результат:', result)
+                
+                if (typeof result === 'number') {
+                    // Обработка HTTP статус кодов
+                    switch (result) {
+                        case 403:
+                            throw new Error('Требуется авторизация. Пожалуйста, войдите в систему заново.')
+                        case 400:
+                            throw new Error('Неверные данные для регистрации биометрии')
+                        case 500:
+                            throw new Error('Ошибка сервера при регистрации биометрии')
+                        default:
+                            throw new Error(`Ошибка регистрации биометрии (код: ${result})`)
+                    }
+                }
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'Не удалось зарегистрировать биометрию')
+                }
+                
                 setHasCredentials(true)
+                console.log('🎉 Регистрация завершена успешно')
                 onSuccess()
             }
         } catch (error) {
+            console.error('❌ ОШИБКА в handleBiometricAuth:', error)
             const message = error instanceof Error ? error.message : 'Ошибка биометрической аутентификации'
             onError?.(message)
         } finally {
+            console.log('🔄 Устанавливаем isLoading = false')
             setIsLoading(false)
         }
     }

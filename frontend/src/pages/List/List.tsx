@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { FC, useState, useEffect } from 'react'
 
 import { Passwords } from '../../types/passwords'
 
@@ -25,7 +25,16 @@ export const List: FC<PasswordsListProps> = ({
     masterPassword,
 }) => {
     const [biometricMessage, setBiometricMessage] = useState<string>('')
-    const [showBiometricButton, setShowBiometricButton] = useState<boolean>(!hasBiometricCredentials())
+    const [showBiometricButton, setShowBiometricButton] = useState<boolean>(false)
+
+    useEffect(() => {
+        const checkBiometricCredentials = async () => {
+            const hasCredentials = await hasBiometricCredentials()
+            setShowBiometricButton(!hasCredentials)
+        }
+        
+        checkBiometricCredentials()
+    }, [])
 
     const handleBiometricSuccess = () => {
         setBiometricMessage('Биометрическая аутентификация успешно настроена!')

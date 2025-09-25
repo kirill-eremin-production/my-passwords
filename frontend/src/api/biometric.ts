@@ -9,6 +9,7 @@ import {
 } from '../utils/webauthn'
 import { registerBiometric as registerBiometricAPI } from './biometricRegister'
 import { authenticateWithBiometric as authenticateBiometricAPI } from './biometricAuthenticate'
+import { getBiometricChallenge } from './getBiometricChallenge'
 import {
     encryptMasterPasswordLocally,
     decryptMasterPasswordLocally
@@ -23,9 +24,11 @@ const MASTER_PASSWORD_STORAGE_KEY = 'biometric_master_passwords'
  */
 const saveCredentials = async (credentials: StoredCredential[]): Promise<void> => {
     try {
+        console.log('🔄 saveCredentials: начинаем сохранение credentials...')
         await secureStorage.storeEncryptedData(STORAGE_KEY, JSON.stringify(credentials))
+        console.log('✅ saveCredentials: успешно сохранено')
     } catch (error) {
-        console.error('Ошибка сохранения учетных данных:', error)
+        console.error('❌ saveCredentials: ошибка сохранения учетных данных:', error)
         throw error
     }
 }
@@ -35,9 +38,11 @@ const saveCredentials = async (credentials: StoredCredential[]): Promise<void> =
  */
 const saveMasterPasswords = async (masterPasswords: Record<string, string>): Promise<void> => {
     try {
+        console.log('🔄 saveMasterPasswords: начинаем сохранение мастер-паролей...')
         await secureStorage.storeEncryptedData(MASTER_PASSWORD_STORAGE_KEY, JSON.stringify(masterPasswords))
+        console.log('✅ saveMasterPasswords: успешно сохранено')
     } catch (error) {
-        console.error('Ошибка сохранения зашифрованных мастер-паролей:', error)
+        console.error('❌ saveMasterPasswords: ошибка сохранения зашифрованных мастер-паролей:', error)
         throw error
     }
 }
@@ -60,10 +65,13 @@ const loadMasterPasswords = async (): Promise<Record<string, string>> => {
  */
 const loadCredentials = async (): Promise<StoredCredential[]> => {
     try {
+        console.log('🔄 loadCredentials: загружаем credentials...')
         const stored = await secureStorage.getEncryptedData(STORAGE_KEY)
-        return stored ? JSON.parse(stored) : []
+        const result = stored ? JSON.parse(stored) : []
+        console.log('✅ loadCredentials: загружено:', result)
+        return result
     } catch (error) {
-        console.error('Ошибка загрузки учетных данных:', error)
+        console.error('❌ loadCredentials: ошибка загрузки учетных данных:', error)
         return []
     }
 }
@@ -79,24 +87,37 @@ export const hasBiometricCredentials = async (): Promise<boolean> => {
 /**
  * Регистрирует новые биометрические учетные данные с мастер-паролем
  */
-export const registerBiometric = async (username: string = 'user', masterPassword?: string): Promise<boolean> => {
+export const registerBiometric = async (username: string = 'user', masterPassword?: string): Promise<{ success: boolean; message?: string } | number> => {
+    console.log('🚀 Старт регистрации биометрии')
+    
     if (!isWebAuthnSupported()) {
+        console.error('❌ WebAuthn не поддерживается')
         throw new Error('WebAuthn не поддерживается')
     }
+    console.log('✅ WebAuthn поддерживается')
 
-    if (!(await isPlatformAuthenticatorAvailable())) {
+    const platformAuthAvailable = await isPlatformAuthenticatorAvailable()
+    console.log('🔍 Проверка платформенного аутентификатора:', platformAuthAvailable)
+    
+    if (!platformAuthAvailable) {
+        console.error('❌ Платформенный аутентификатор недоступен')
         throw new Error('Платформенный аутентификатор недоступен')
     }
+    console.log('✅ Платформенный аутентификатор доступен')
 
     try {
+        console.log('🔄 Начинаем регистрацию биометрии для пользователя:', username)
+        
         const challenge = generateChallenge()
         const userId = generateUserId()
+        
+        console.log('✅ Сгенерированы challenge и userId')
 
         const registrationOptions: PublicKeyCredentialCreationOptions = {
             challenge,
             rp: {
                 name: 'My Passwords',
-                id: window.location.hostname
+                id: 'local.passwords.keremin.ru'
             },
             user: {
                 id: userId,
@@ -116,39 +137,58 @@ export const registerBiometric = async (username: string = 'user', masterPasswor
             attestation: 'none'
         }
 
+        console.log('✅ Созданы параметры регистрации:', registrationOptions)
+        console.log('🔄 Вызываем navigator.credentials.create()...')
+
         const credential = await navigator.credentials.create({
             publicKey: registrationOptions
         }) as PublicKeyCredential
 
+        console.log('✅ Credential создан успешно:', credential)
+
         if (!credential) {
+            console.error('❌ Credential не создан')
             throw new Error('Не удалось создать учетные данные')
         }
 
+        console.log('🔄 Получаем response из credential...')
         const response = credential.response as AuthenticatorAttestationResponse
+        console.log('✅ Response получен:', response)
         
         // Сохраняем метаданные учетных данных локально
+        console.log('🔄 Создаем storedCredential...')
         const storedCredential: StoredCredential = {
             id: credential.id,
             publicKey: arrayBufferToBase64(credential.rawId),
             counter: 0,
             createdAt: new Date().toISOString()
         }
+        console.log('✅ storedCredential создан:', storedCredential)
 
+        console.log('🔄 Загружаем существующие credentials...')
         const existingCredentials = await loadCredentials()
+        console.log('✅ Существующие credentials загружены:', existingCredentials)
+        
         const updatedCredentials = [...existingCredentials, storedCredential]
+        console.log('🔄 Сохраняем обновленные credentials...')
         await saveCredentials(updatedCredentials)
+        console.log('✅ Credentials сохранены')
 
         // Если мастер-пароль передан, сохраняем его локально в зашифрованном виде
         if (masterPassword) {
+            console.log('🔄 Шифруем и сохраняем мастер-пароль...')
             const encryptedMasterPassword = encryptMasterPasswordLocally(masterPassword, credential.id)
+            console.log('✅ Мастер-пароль зашифрован')
             
             // Сохраняем зашифрованный мастер-пароль в безопасное хранилище
             const masterPasswords = await loadMasterPasswords()
             masterPasswords[credential.id] = encryptedMasterPassword
             await saveMasterPasswords(masterPasswords)
+            console.log('✅ Зашифрованный мастер-пароль сохранен')
         }
 
         // Отправляем только метаданные на сервер (БЕЗ мастер-пароля!)
+        console.log('🔄 Подготавливаем данные для отправки на сервер...')
         const registrationData = {
             credentialId: credential.id,
             publicKey: arrayBufferToBase64(credential.rawId),
@@ -157,20 +197,29 @@ export const registerBiometric = async (username: string = 'user', masterPasswor
             attestationObject: arrayBufferToBase64(response.attestationObject)
             // masterPassword УДАЛЕН для безопасности!
         }
+        console.log('✅ Данные подготовлены:', registrationData)
 
+        console.log('🔄 Отправляем запрос на сервер...')
         const result = await registerBiometricAPI(registrationData)
+        console.log('✅ Ответ от сервера получен:', result)
         
         if (typeof result === 'number') {
-            throw new Error(`Ошибка регистрации на сервере: ${result}`)
+            return result // Возвращаем код ошибки
         }
 
         if (!result.success) {
-            throw new Error(result.message || 'Ошибка регистрации биометрии')
+            return result // Возвращаем объект с ошибкой
         }
 
-        return true
+        console.log('🎉 Биометрия успешно зарегистрирована')
+        return { success: true, message: 'Биометрия успешно зарегистрирована' }
     } catch (error) {
-        console.error('Ошибка регистрации биометрических данных:', error)
+        console.error('❌ КРИТИЧЕСКАЯ ОШИБКА регистрации биометрии:', error)
+        console.error('Детали ошибки:', {
+            name: error instanceof Error ? error.name : 'Unknown',
+            message: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
+        })
         throw error
     }
 }
@@ -194,7 +243,19 @@ export const authenticateWithBiometric = async (): Promise<{ success: boolean; m
     }
 
     try {
-        const challenge = generateChallenge()
+        console.log('🔄 Получаем challenge с сервера...')
+        const challengeResponse = await getBiometricChallenge()
+        
+        if (typeof challengeResponse === 'number') {
+            throw new Error(`Ошибка получения challenge: ${challengeResponse}`)
+        }
+        
+        if (!challengeResponse.success) {
+            throw new Error('Не удалось получить challenge с сервера')
+        }
+        
+        console.log('✅ Challenge получен с сервера')
+        const challenge = base64ToArrayBuffer(challengeResponse.challenge)
 
         const authenticationOptions: PublicKeyCredentialRequestOptions = {
             challenge,
@@ -206,9 +267,12 @@ export const authenticateWithBiometric = async (): Promise<{ success: boolean; m
             userVerification: 'required'
         }
 
+        console.log('🔄 Выполняем WebAuthn аутентификацию...')
         const assertion = await navigator.credentials.get({
             publicKey: authenticationOptions
         }) as PublicKeyCredential
+        
+        console.log('✅ WebAuthn аутентификация успешна')
 
         if (!assertion) {
             throw new Error('Аутентификация не удалась')

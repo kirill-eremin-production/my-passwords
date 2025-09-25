@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 import { resolve } from "path";
 
 import { HOUR } from "./constants";
+import { encryptedStore } from "./utils/encryptedStore";
 
 export interface SessionData {
   sessionId: string;
@@ -12,16 +13,23 @@ export interface SessionData {
 
 const storeDirPath = resolve(".", "store");
 export const sessionsFilePath = resolve(storeDirPath, "sessions.txt");
-const encoding = "utf-8";
 
 /** При необходимости создает файл для хранения сессий */
 export function prepareSessionsStore() {
   prepareAppDir();
 
-  const isStoreFileExists = existsSync(sessionsFilePath);
+  // Валидация ключа шифрования
+  if (!encryptedStore.validateEncryptionKey()) {
+    throw new Error("Невалидный ключ шифрования для сессий!");
+  }
 
-  if (!isStoreFileExists) {
-    writeFileSync(sessionsFilePath, "{}", { encoding });
+  // Миграция существующего файла в зашифрованный формат (если нужно)
+  if (existsSync(sessionsFilePath)) {
+    try {
+      encryptedStore.migrateToEncrypted(sessionsFilePath);
+    } catch (error) {
+      console.error("⚠️ Ошибка миграции файла сессий:", error);
+    }
   }
 }
 
@@ -29,16 +37,27 @@ function prepareAppDir() {
   const isAppDirExists = existsSync(storeDirPath);
 
   if (!isAppDirExists) {
-    mkdirSync(storeDirPath);
+    mkdirSync(storeDirPath, { recursive: true });
   }
 }
 
 export function readSessionsStore(): string {
-  return readFileSync(sessionsFilePath, { encoding });
+  try {
+    const data = encryptedStore.readEncrypted(sessionsFilePath);
+    return data || "{}"; // Возвращаем пустой объект если файл пустой
+  } catch (error) {
+    console.error("Ошибка чтения зашифрованного хранилища сессий:", error);
+    return "{}";
+  }
 }
 
 export function writeSessionsStore(data: string) {
-  writeFileSync(sessionsFilePath, data, { encoding });
+  try {
+    encryptedStore.writeEncrypted(sessionsFilePath, data);
+  } catch (error) {
+    console.error("Ошибка записи в зашифрованное хранилище сессий:", error);
+    throw error;
+  }
 }
 
 export function storeSession(sessionData: SessionData) {
