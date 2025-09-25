@@ -6,6 +6,7 @@ import { Button } from '../../components/Button/Button'
 import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
 import { SendTelegramAuthCodeButton } from '../../features/SendTelegramAuthCode'
+import { BiometricButton } from '../../components/BiometricButton'
 
 import styles from './AuthPage.module.css'
 
@@ -15,6 +16,7 @@ export interface AuthPageProps {
 
 export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
     const [isError, setIsError] = useState<boolean>(false)
+    const [biometricError, setBiometricError] = useState<string>('')
 
     const onFormSubmit: FormEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault()
@@ -39,6 +41,16 @@ export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
                 setIsAuthPage(false)
             },
         })
+    }
+
+    const handleBiometricSuccess = () => {
+        setIsAuthPage(false)
+    }
+
+    const handleBiometricError = (error: string) => {
+        setBiometricError(error)
+        // Автоматически очищаем ошибку через 5 секунд
+        setTimeout(() => setBiometricError(''), 5000)
     }
 
     if (isError) {
@@ -75,6 +87,19 @@ export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
                     </Button>
                 </div>
             </form>
+
+            <BiometricButton
+                onSuccess={handleBiometricSuccess}
+                onError={handleBiometricError}
+            />
+
+            {biometricError && (
+                <div className={styles.biometricError}>
+                    <Text>
+                        {biometricError}
+                    </Text>
+                </div>
+            )}
 
             <SendTelegramAuthCodeButton />
         </div>

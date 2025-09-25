@@ -23,6 +23,7 @@
         "eject": "react-scripts eject",
         "prettier:fix": "prettier --write 'src/**/*.{ts,tsx,css}'"
     },
+    "proxy": "http://localhost:60125",
     "eslintConfig": {
         "extends": [
             "react-app",
