@@ -9,48 +9,8 @@ const biometricFilePath = resolve(storeDirPath, "biometric.txt");
 const challengesFilePath = resolve(storeDirPath, "challenges.txt");
 const encoding = "utf-8";
 
-// Ключ для шифрования мастер-паролей (в production должен быть в переменных окружения)
-const ENCRYPTION_KEY = process.env.BIOMETRIC_ENCRYPTION_KEY || "my-passwords-biometric-key-2024";
-
-/**
- * Шифрует мастер-пароль (упрощенная версия для совместимости)
- */
-export function encryptMasterPassword(masterPassword: string): string {
-  // Создаем хеш от ключа шифрования для дополнительной безопасности
-  const keyHash = createHash('sha256').update(ENCRYPTION_KEY).digest('hex');
-  
-  // Простое XOR шифрование с Base64 кодированием
-  const encrypted = Buffer.from(masterPassword, 'utf8')
-    .map((byte, i) => byte ^ keyHash.charCodeAt(i % keyHash.length))
-  
-  // Добавляем случайную соль для усложнения
-  const timestamp = Date.now().toString();
-  const salt = createHash('md5').update(timestamp).digest('hex').slice(0, 8);
-  
-  return salt + ':' + Buffer.from(encrypted).toString('base64');
-}
-
-/**
- * Расшифровывает мастер-пароль
- */
-export function decryptMasterPassword(encryptedData: string): string {
-  const parts = encryptedData.split(':');
-  if (parts.length !== 2) {
-    throw new Error('Неверный формат зашифрованных данных');
-  }
-  
-  const salt = parts[0]; // Соль для проверки целостности (можно игнорировать в простой реализации)
-  const encryptedBase64 = parts[1];
-  
-  const keyHash = createHash('sha256').update(ENCRYPTION_KEY).digest('hex');
-  const encrypted = Array.from(Buffer.from(encryptedBase64, 'base64'));
-  
-  // Расшифровываем XOR
-  const decrypted = encrypted
-    .map((byte, i) => byte ^ keyHash.charCodeAt(i % keyHash.length))
-  
-  return Buffer.from(decrypted).toString('utf8');
-}
+// УДАЛЕНЫ функции шифрования мастер-пароля для безопасности!
+// Мастер-пароль теперь хранится только локально на клиенте.
 
 /**
  * При необходимости создает файлы для хранения биометрических данных

@@ -4,7 +4,6 @@ interface BiometricRegistrationData {
   authenticatorData: string
   clientDataJSON: string
   attestationObject?: string
-  masterPassword: string
 }
 
 interface BiometricRegistrationResponse {

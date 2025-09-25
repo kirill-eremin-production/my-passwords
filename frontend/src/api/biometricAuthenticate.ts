@@ -10,7 +10,6 @@ interface BiometricAuthenticationResponse {
   success: boolean
   sessionId: string
   valid: boolean
-  masterPassword: string
   message: string
 }
 

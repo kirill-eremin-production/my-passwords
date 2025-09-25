@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { getSessionFromReq } from "../../middlewares/authorization/utils";
 import { BiometricRegistrationRequest } from "../../types/biometric";
-import { storeBiometricCredential, encryptMasterPassword } from "../../biometricStore";
+import { storeBiometricCredential } from "../../biometricStore";
 
 /**
  * Регистрирует биометрические учетные данные вместе с зашифрованным мастер-паролем
@@ -22,26 +22,22 @@ export function registerBiometric(req: Request, res: Response) {
     return;
   }
 
-  const { credentialId, publicKey, masterPassword, authenticatorData, clientDataJSON } = registrationData;
+  const { credentialId, publicKey, authenticatorData, clientDataJSON } = registrationData;
 
-  if (!credentialId || !publicKey || !masterPassword) {
+  if (!credentialId || !publicKey) {
     res.status(400).json({ error: "Отсутствуют обязательные поля" });
     return;
   }
 
   try {
-    // Шифруем мастер-пароль
-    const encryptedMasterPassword = encryptMasterPassword(masterPassword);
-
-    // Сохраняем биометрические учетные данные
+    // Сохраняем только метаданные биометрических учетных данных (БЕЗ мастер-пароля!)
     const biometricCredential = {
       id: credentialId,
       publicKey,
       counter: 0,
       createdAt: new Date().toISOString(),
       sessionId: session.sessionId,
-      userAgent: req.headers["user-agent"],
-      encryptedMasterPassword
+      userAgent: req.headers["user-agent"]
     };
 
     storeBiometricCredential(biometricCredential);

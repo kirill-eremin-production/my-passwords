@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { BiometricAuthenticationRequest } from "../../types/biometric";
 import {
   getBiometricCredentialById,
-  decryptMasterPassword,
   getChallengeBySessionId,
   removeChallenge
 } from "../../biometricStore";
@@ -54,8 +53,8 @@ export function authenticateWithBiometric(req: Request, res: Response) {
     // 3. Проверка подписи с использованием публичного ключа
     // 4. Проверка и обновление счетчика
 
-    // Расшифровываем мастер-пароль
-    const masterPassword = decryptMasterPassword(credential.encryptedMasterPassword);
+    // Мастер-пароль больше НЕ расшифровывается на сервере для безопасности!
+    // Теперь он получается только локально на клиенте.
 
     // Создаем новую валидную сессию
     const newSessionId = generateSessionId();
@@ -69,7 +68,7 @@ export function authenticateWithBiometric(req: Request, res: Response) {
     storeSession(newSession);
 
     // Устанавливаем cookie с новой сессией
-    res.cookie("sessionId", newSessionId, { 
+    res.cookie("sessionId", newSessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict'
@@ -79,7 +78,7 @@ export function authenticateWithBiometric(req: Request, res: Response) {
       success: true,
       sessionId: newSessionId,
       valid: true,
-      masterPassword: masterPassword,
+      // masterPassword удален для безопасности - получается только локально!
       message: "Биометрическая аутентификация успешна"
     });
 

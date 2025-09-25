@@ -5,7 +5,6 @@ export interface BiometricCredential {
   createdAt: string
   sessionId: string
   userAgent?: string
-  encryptedMasterPassword: string // Зашифрованный мастер-пароль
 }
 
 export interface BiometricRegistrationRequest {
@@ -14,7 +13,6 @@ export interface BiometricRegistrationRequest {
   authenticatorData: string
   clientDataJSON: string
   attestationObject?: string
-  masterPassword: string // Мастер-пароль для шифрования
 }
 
 export interface BiometricAuthenticationRequest {
@@ -28,7 +26,6 @@ export interface BiometricAuthenticationRequest {
 export interface BiometricAuthenticationResponse {
   sessionId: string
   valid: boolean
-  masterPassword?: string // Расшифрованный мастер-пароль
 }
 
 export interface WebAuthnChallenge {
