@@ -15,13 +15,15 @@ import {
 import styles from './BiometricButton.module.css'
 
 export interface BiometricButtonProps {
-    onSuccess: () => void
+    onSuccess: (masterPassword?: string) => void
     onError?: (error: string) => void
+    masterPassword?: string // Для регистрации биометрии
 }
 
 export const BiometricButton: FC<BiometricButtonProps> = ({
     onSuccess,
-    onError
+    onError,
+    masterPassword
 }) => {
     const [isSupported, setIsSupported] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -57,12 +59,21 @@ export const BiometricButton: FC<BiometricButtonProps> = ({
 
         try {
             if (hasCredentials) {
-                // Аутентификация
-                await authenticateWithBiometric()
-                onSuccess()
+                // Аутентификация - получаем мастер-пароль с сервера
+                const result = await authenticateWithBiometric()
+                if (result.success && result.masterPassword) {
+                    onSuccess(result.masterPassword)
+                } else {
+                    onError?.('Не удалось получить мастер-пароль')
+                }
             } else {
-                // Первичная регистрация
-                await registerBiometric()
+                // Первичная регистрация - отправляем мастер-пароль на сервер
+                if (!masterPassword) {
+                    onError?.('Мастер-пароль не предоставлен для регистрации биометрии')
+                    return
+                }
+                
+                await registerBiometric('user', masterPassword)
                 setHasCredentials(true)
                 onSuccess()
             }

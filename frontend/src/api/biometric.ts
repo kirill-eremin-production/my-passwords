@@ -7,6 +7,8 @@ import {
     isWebAuthnSupported,
     isPlatformAuthenticatorAvailable
 } from '../utils/webauthn'
+import { registerBiometric as registerBiometricAPI } from './biometricRegister'
+import { authenticateWithBiometric as authenticateBiometricAPI } from './biometricAuthenticate'
 
 const STORAGE_KEY = 'biometric_credentials'
 
@@ -43,9 +45,9 @@ export const hasBiometricCredentials = (): boolean => {
 }
 
 /**
- * Регистрирует новые биометрические учетные данные
+ * Регистрирует новые биометрические учетные данные с мастер-паролем
  */
-export const registerBiometric = async (username: string = 'user'): Promise<boolean> => {
+export const registerBiometric = async (username: string = 'user', masterPassword?: string): Promise<boolean> => {
     if (!isWebAuthnSupported()) {
         throw new Error('WebAuthn не поддерживается')
     }
@@ -92,10 +94,45 @@ export const registerBiometric = async (username: string = 'user'): Promise<bool
 
         const response = credential.response as AuthenticatorAttestationResponse
         
-        // Сохраняем ID учетных данных и метаданные
+        // Если мастер-пароль не передан, используем только локальное хранение (для обратной совместимости)
+        if (!masterPassword) {
+            const storedCredential: StoredCredential = {
+                id: credential.id,
+                publicKey: arrayBufferToBase64(credential.rawId),
+                counter: 0,
+                createdAt: new Date().toISOString()
+            }
+
+            const existingCredentials = loadCredentials()
+            const updatedCredentials = [...existingCredentials, storedCredential]
+            saveCredentials(updatedCredentials)
+            return true
+        }
+
+        // Отправляем данные на сервер с мастер-паролем
+        const registrationData = {
+            credentialId: credential.id,
+            publicKey: arrayBufferToBase64(credential.rawId),
+            authenticatorData: arrayBufferToBase64(response.getAuthenticatorData()),
+            clientDataJSON: arrayBufferToBase64(response.clientDataJSON),
+            attestationObject: arrayBufferToBase64(response.attestationObject),
+            masterPassword: masterPassword
+        }
+
+        const result = await registerBiometricAPI(registrationData)
+        
+        if (typeof result === 'number') {
+            throw new Error(`Ошибка регистрации на сервере: ${result}`)
+        }
+
+        if (!result.success) {
+            throw new Error(result.message || 'Ошибка регистрации биометрии')
+        }
+
+        // Сохраняем также локально для проверки наличия
         const storedCredential: StoredCredential = {
             id: credential.id,
-            publicKey: arrayBufferToBase64(credential.rawId), // Используем rawId вместо publicKey
+            publicKey: arrayBufferToBase64(credential.rawId),
             counter: 0,
             createdAt: new Date().toISOString()
         }
@@ -113,8 +150,9 @@ export const registerBiometric = async (username: string = 'user'): Promise<bool
 
 /**
  * Аутентификация с помощью биометрических данных
+ * Возвращает объект с результатом аутентификации и мастер-паролем
  */
-export const authenticateWithBiometric = async (): Promise<boolean> => {
+export const authenticateWithBiometric = async (): Promise<{ success: boolean; masterPassword?: string }> => {
     if (!isWebAuthnSupported()) {
         throw new Error('WebAuthn не поддерживается')
     }
@@ -149,9 +187,31 @@ export const authenticateWithBiometric = async (): Promise<boolean> => {
             throw new Error('Аутентификация не удалась')
         }
 
-        // В реальном приложении здесь должна быть проверка подписи на сервере
-        // Для демонстрации просто проверяем, что assertion получен
-        return true
+        const response = assertion.response as AuthenticatorAssertionResponse
+
+        // Отправляем данные на сервер для проверки
+        const authenticationData = {
+            credentialId: assertion.id,
+            authenticatorData: arrayBufferToBase64(response.authenticatorData),
+            clientDataJSON: arrayBufferToBase64(response.clientDataJSON),
+            signature: arrayBufferToBase64(response.signature),
+            userHandle: response.userHandle ? arrayBufferToBase64(response.userHandle) : undefined
+        }
+
+        const result = await authenticateBiometricAPI(authenticationData)
+        
+        if (typeof result === 'number') {
+            throw new Error(`Ошибка аутентификации на сервере: ${result}`)
+        }
+
+        if (!result.success) {
+            throw new Error(result.message || 'Ошибка биометрической аутентификации')
+        }
+
+        return {
+            success: true,
+            masterPassword: result.masterPassword
+        }
     } catch (error) {
         console.error('Ошибка биометрической аутентификации:', error)
         throw error

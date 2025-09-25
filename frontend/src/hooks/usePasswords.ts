@@ -22,6 +22,7 @@ export function usePasswords(callbacks: UsePasswordsCallbacks): {
     isMasterPassword: boolean
     setMasterPassword: (value: string | null) => void
     setSelectedPasswordId: (id: number | null) => void
+    masterPassword: string | null
 } {
     const { setIsLoading, setIsAuthPage } = callbacks
 
@@ -95,5 +96,6 @@ export function usePasswords(callbacks: UsePasswordsCallbacks): {
         isMasterPassword: Boolean(masterPassword),
         setMasterPassword,
         setSelectedPasswordId,
+        masterPassword,
     }
 }

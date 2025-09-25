@@ -30,6 +30,7 @@ function App() {
         selectedPasswordId,
         setMasterPassword,
         setSelectedPasswordId,
+        masterPassword,
     } = usePasswords({ setIsLoading, setIsAuthPage, setLoadingMessage })
 
     const onCreateNewPasswordSave = (password: Password) => {
@@ -57,6 +58,7 @@ function App() {
             onGoToCreateNewPasswordPage={() => setIsCreateNewPasswordPage(true)}
             onSelectPasswordFromList={setSelectedPasswordId}
             passwords={passwords || []}
+            masterPassword={isMasterPassword ? masterPassword : undefined}
         ></List>
     )
 
@@ -86,7 +88,10 @@ function App() {
     }
 
     if (isAuthPage) {
-        page = <AuthPage setIsAuthPage={setIsAuthPage} />
+        page = <AuthPage
+            setIsAuthPage={setIsAuthPage}
+            setMasterPassword={setMasterPassword}
+        />
     }
 
     if (isLoading) {

@@ -12,9 +12,10 @@ import styles from './AuthPage.module.css'
 
 export interface AuthPageProps {
     setIsAuthPage: (value: boolean) => void
+    setMasterPassword: (value: string | null) => void
 }
 
-export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
+export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage, setMasterPassword }) => {
     const [isError, setIsError] = useState<boolean>(false)
     const [biometricError, setBiometricError] = useState<string>('')
 
@@ -43,7 +44,11 @@ export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage }) => {
         })
     }
 
-    const handleBiometricSuccess = () => {
+    const handleBiometricSuccess = (masterPassword?: string) => {
+        if (masterPassword) {
+            // Биометрическая аутентификация - устанавливаем мастер-пароль и переходим дальше
+            setMasterPassword(masterPassword)
+        }
         setIsAuthPage(false)
     }
 
