@@ -5,7 +5,7 @@ killall node;
 
 # Запускаем backend
 echo "Запускаем backend..."
-cd ./backend && npm run dev &
+cd ./backend && npm run start:dev &
 
 # Ждем пока backend не станет доступен на порту 60125
 echo "Ожидание запуска backend..."
