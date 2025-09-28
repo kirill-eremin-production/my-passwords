@@ -1,12 +1,15 @@
-import { FC, useState, useEffect } from 'react'
+import { FC, useEffect, useState } from 'react'
+
 import { useNavigate } from 'react-router-dom'
 
-import { Logo } from '../../components/Logo/Logo'
+import { hasBiometricCredentials } from '../../api/biometric'
+
+import { BiometricButton } from '../../components/BiometricButton'
 import { Button } from '../../components/Button/Button'
+import { Logo } from '../../components/Logo/Logo'
 import { PasswordsList } from '../../components/PasswordsList/PasswordsList'
 import { Text } from '../../components/Text/Text'
-import { BiometricButton } from '../../components/BiometricButton'
-import { hasBiometricCredentials } from '../../api/biometric'
+
 import { usePasswordStore } from '../../stores/passwordStore'
 
 import styles from './List.module.css'
@@ -15,14 +18,15 @@ export const List: FC = () => {
     const navigate = useNavigate()
     const { passwords, masterPassword, loadPasswords } = usePasswordStore()
     const [biometricMessage, setBiometricMessage] = useState<string>('')
-    const [showBiometricButton, setShowBiometricButton] = useState<boolean>(false)
+    const [showBiometricButton, setShowBiometricButton] =
+        useState<boolean>(false)
 
     useEffect(() => {
         const checkBiometricCredentials = async () => {
             const hasCredentials = await hasBiometricCredentials()
             setShowBiometricButton(!hasCredentials)
         }
-        
+
         checkBiometricCredentials()
         loadPasswords() // Загрузка паролей при монтировании компонента
     }, [loadPasswords])
@@ -46,7 +50,9 @@ export const List: FC = () => {
 
             <div className={styles.list}>
                 <PasswordsList
-                    onSelectListItem={(id: number) => navigate(`/passwords/${id}`)}
+                    onSelectListItem={(id: number) =>
+                        navigate(`/passwords/${id}`)
+                    }
                     passwords={passwords}
                 />
                 <Button
@@ -59,7 +65,10 @@ export const List: FC = () => {
 
                 {showBiometricButton && masterPassword && (
                     <div className={styles.biometricSection}>
-                        <Text>Настройте биометрическую аутентификацию для быстрого входа:</Text>
+                        <Text>
+                            Настройте биометрическую аутентификацию для быстрого
+                            входа:
+                        </Text>
                         <BiometricButton
                             onSuccess={handleBiometricSuccess}
                             onError={handleBiometricError}

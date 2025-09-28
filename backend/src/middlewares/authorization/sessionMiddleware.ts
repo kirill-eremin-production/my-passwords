@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from 'express'
 
-import { getSessionFromReq, createNewSession } from "./utils";
+import { createNewSession, getSessionFromReq } from './utils'
 
 /**
  * Когда: в запросе нет сессии
@@ -13,21 +13,21 @@ import { getSessionFromReq, createNewSession } from "./utils";
  * Тогда: идем дальше
  */
 export function sessionMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) {
-  const session = getSessionFromReq(req);
+    const session = getSessionFromReq(req)
 
-  if (!session) {
-    const newSessionId = createNewSession();
+    if (!session) {
+        const newSessionId = createNewSession()
 
-    res.cookie("sessionId", newSessionId, { httpOnly: true });
-    res.status(401);
-    res.end();
-    return;
-  }
+        res.cookie('sessionId', newSessionId, { httpOnly: true })
+        res.status(401)
+        res.end()
+        return
+    }
 
-  next();
-  return;
+    next()
+    return
 }

@@ -1,16 +1,22 @@
-import { FC, FormEventHandler, useState, useEffect } from 'react'
+import { FC, FormEventHandler, useEffect, useState } from 'react'
+
 import { useNavigate } from 'react-router-dom'
+
+import { hasBiometricCredentials } from '../../api/biometric'
 import { sendAuthCode } from '../../api/sendAuthCode'
-import { toStringOrUndefined } from '../../utils/toStringOrUndefined'
-import { Input } from '../../components/Input/Input'
+
+import { BiometricButton } from '../../components/BiometricButton'
 import { Button } from '../../components/Button/Button'
+import { Input } from '../../components/Input/Input'
 import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
+
 import { SendTelegramAuthCodeButton } from '../../features/SendTelegramAuthCode'
-import { BiometricButton } from '../../components/BiometricButton'
-import { hasBiometricCredentials } from '../../api/biometric'
+
 import { useAuthStore } from '../../stores/authStore'
 import { usePasswordStore } from '../../stores/passwordStore'
+
+import { toStringOrUndefined } from '../../utils/toStringOrUndefined'
 
 import styles from './AuthPage.module.css'
 
@@ -52,7 +58,9 @@ export const AuthPage: FC = () => {
                 }
 
                 setIsAuthenticated(true)
-                navigate(isMasterPasswordSet ? '/passwords' : '/master-password')
+                navigate(
+                    isMasterPasswordSet ? '/passwords' : '/master-password'
+                )
             },
         })
     }

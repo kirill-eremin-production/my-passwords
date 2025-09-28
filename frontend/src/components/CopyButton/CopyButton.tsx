@@ -1,8 +1,8 @@
-import { FC, useState, useRef } from 'react'
+import { FC, useRef, useState } from 'react'
+
 import { Copy, CopyCheck } from '@gravity-ui/icons'
 
 import { Button } from '../Button/Button'
-
 import styles from './CopyButton.module.css'
 
 export interface CopyButtonProps {

@@ -1,4 +1,5 @@
 import { FC, PropsWithChildren } from 'react'
+
 import cn from 'classnames'
 
 import styles from './Text.module.css'

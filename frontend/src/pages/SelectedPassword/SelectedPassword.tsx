@@ -1,11 +1,15 @@
 import { FC } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { Password } from '../../types/passwords'
+
+import { useNavigate, useParams } from 'react-router-dom'
+
 import { Button } from '../../components/Button/Button'
-import { PasswordForm } from '../../components/PasswordForm/PasswordForm'
 import { Logo } from '../../components/Logo/Logo'
+import { PasswordForm } from '../../components/PasswordForm/PasswordForm'
 import { Text } from '../../components/Text/Text'
+
 import { usePasswordStore } from '../../stores/passwordStore'
+
+import { Password } from '../../types/passwords'
 
 import styles from './SelectedPassword.module.css'
 
@@ -13,10 +17,10 @@ export const SelectedPassword: FC = () => {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const { passwords, updatePassword, deletePassword } = usePasswordStore()
-    
+
     const passwordIndex = id ? parseInt(id, 10) : -1
     const password = passwords[passwordIndex]
-    
+
     if (!password || passwordIndex < 0) {
         return (
             <div>
@@ -61,14 +65,15 @@ export const SelectedPassword: FC = () => {
             </div>
 
             <div className={styles.controls}>
-                <PasswordForm
-                    password={password}
-                    onSubmit={onSaveClick}
-                />
+                <PasswordForm password={password} onSubmit={onSaveClick} />
                 <Button fullWidth theme="second" onClick={onDeleteClick}>
                     Удалить
                 </Button>
-                <Button fullWidth theme="second" onClick={() => navigate('/passwords')}>
+                <Button
+                    fullWidth
+                    theme="second"
+                    onClick={() => navigate('/passwords')}
+                >
                     Назад
                 </Button>
             </div>

@@ -27,7 +27,10 @@ export const isPlatformAuthenticatorAvailable = async (): Promise<boolean> => {
     try {
         return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
     } catch (error) {
-        console.warn('Ошибка при проверке доступности платформенного аутентификатора:', error)
+        console.warn(
+            'Ошибка при проверке доступности платформенного аутентификатора:',
+            error
+        )
         return false
     }
 }
@@ -43,7 +46,10 @@ export const isConditionalMediationSupported = async (): Promise<boolean> => {
     try {
         // Проверяем наличие метода перед вызовом
         const PublicKeyCredential = window.PublicKeyCredential as any
-        if (typeof PublicKeyCredential.isConditionalMediationAvailable === 'function') {
+        if (
+            typeof PublicKeyCredential.isConditionalMediationAvailable ===
+            'function'
+        ) {
             return await PublicKeyCredential.isConditionalMediationAvailable()
         }
         return false
@@ -102,53 +108,59 @@ export const isIOSDevice = (): boolean => {
  * Проверяет, является ли устройство macOS
  */
 export const isMacOSDevice = (): boolean => {
-    return /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent) ||
-           navigator.platform === 'MacIntel'
+    return (
+        /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent) ||
+        navigator.platform === 'MacIntel'
+    )
 }
 
 /**
  * Получает информацию о браузере
  */
-export const getBrowserInfo = (): { name: string; version?: string; isSupported: boolean } => {
+export const getBrowserInfo = (): {
+    name: string
+    version?: string
+    isSupported: boolean
+} => {
     const userAgent = navigator.userAgent
-    
+
     if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) {
         const match = userAgent.match(/Chrome\/(\d+)/)
         const version = match ? parseInt(match[1]) : 0
         return {
             name: 'Chrome',
             version: match ? match[1] : undefined,
-            isSupported: version >= 85 // Touch ID поддержка с Chrome 85+
+            isSupported: version >= 85, // Touch ID поддержка с Chrome 85+
         }
     }
-    
+
     if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
         return {
             name: 'Safari',
-            isSupported: true // Safari отлично поддерживает Touch ID на macOS
+            isSupported: true, // Safari отлично поддерживает Touch ID на macOS
         }
     }
-    
+
     if (userAgent.includes('Firefox')) {
         const match = userAgent.match(/Firefox\/(\d+)/)
         const version = match ? parseInt(match[1]) : 0
         return {
             name: 'Firefox',
             version: match ? match[1] : undefined,
-            isSupported: version >= 90 // Ограниченная поддержка с Firefox 90+
+            isSupported: version >= 90, // Ограниченная поддержка с Firefox 90+
         }
     }
-    
+
     if (userAgent.includes('Edg')) {
         return {
             name: 'Edge',
-            isSupported: true // Edge поддерживает WebAuthn на macOS
+            isSupported: true, // Edge поддерживает WebAuthn на macOS
         }
     }
-    
+
     return {
         name: 'Unknown',
-        isSupported: false
+        isSupported: false,
     }
 }
 
@@ -156,9 +168,11 @@ export const getBrowserInfo = (): { name: string; version?: string; isSupported:
  * Проверяет HTTPS соединение
  */
 export const isHTTPS = (): boolean => {
-    return window.location.protocol === 'https:' ||
-           window.location.hostname === 'localhost' ||
-           window.location.hostname === '127.0.0.1'
+    return (
+        window.location.protocol === 'https:' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1'
+    )
 }
 
 /**
@@ -176,39 +190,53 @@ export const getCompatibilityInfo = async (): Promise<{
     const device = isIOSDevice() ? 'iOS' : isMacOSDevice() ? 'macOS' : 'Unknown'
     const https = isHTTPS()
     const webauthn = isWebAuthnSupported()
-    const platformAuthenticator = webauthn ? await isPlatformAuthenticatorAvailable() : false
-    
+    const platformAuthenticator = webauthn
+        ? await isPlatformAuthenticatorAvailable()
+        : false
+
     const recommendations: string[] = []
-    
+
     if (!https) {
-        recommendations.push('Сайт должен работать по HTTPS для биометрической аутентификации')
+        recommendations.push(
+            'Сайт должен работать по HTTPS для биометрической аутентификации'
+        )
     }
-    
+
     if (!browser.isSupported) {
         if (browser.name === 'Chrome') {
-            recommendations.push('Обновите Chrome до версии 85 или новее для поддержки Touch ID')
+            recommendations.push(
+                'Обновите Chrome до версии 85 или новее для поддержки Touch ID'
+            )
         } else if (browser.name === 'Firefox') {
-            recommendations.push('Рекомендуется использовать Safari или Chrome для лучшей совместимости')
+            recommendations.push(
+                'Рекомендуется использовать Safari или Chrome для лучшей совместимости'
+            )
         } else {
-            recommendations.push('Используйте Safari, Chrome (85+) или Edge для биометрической аутентификации')
+            recommendations.push(
+                'Используйте Safari, Chrome (85+) или Edge для биометрической аутентификации'
+            )
         }
     }
-    
+
     if (!platformAuthenticator && device === 'macOS') {
-        recommendations.push('Убедитесь, что Touch ID настроен в системных настройках macOS')
+        recommendations.push(
+            'Убедитесь, что Touch ID настроен в системных настройках macOS'
+        )
     }
-    
+
     if (!platformAuthenticator && device === 'iOS') {
-        recommendations.push('Убедитесь, что Touch ID или Face ID настроены в настройках iOS')
+        recommendations.push(
+            'Убедитесь, что Touch ID или Face ID настроены в настройках iOS'
+        )
     }
-    
+
     return {
         webauthn,
         platformAuthenticator,
         browser,
         https,
         device,
-        recommendations
+        recommendations,
     }
 }
 
@@ -226,26 +254,28 @@ export const getAppleBiometricType = (): 'touch-id' | 'face-id' | 'unknown' => {
     if (isMacOSDevice()) {
         return 'touch-id' // macOS поддерживает Touch ID
     }
-    
+
     if (isIOSDevice()) {
         // Определяем модель устройства для выбора типа биометрии
         const userAgent = navigator.userAgent
-        
+
         // iPhone X и новее поддерживают Face ID
         if (userAgent.includes('iPhone')) {
             // Простая эвристика: современные iPhone имеют Face ID
             // В реальном приложении можно использовать более точное определение
-            const isModernIPhone = window.screen.height >= 812 && window.screen.width >= 375
+            const isModernIPhone =
+                window.screen.height >= 812 && window.screen.width >= 375
             return isModernIPhone ? 'face-id' : 'touch-id'
         }
-        
+
         // iPad Pro с Face ID
         if (userAgent.includes('iPad')) {
-            const isModernIPad = window.screen.height >= 1024 && window.screen.width >= 768
+            const isModernIPad =
+                window.screen.height >= 1024 && window.screen.width >= 768
             return isModernIPad ? 'face-id' : 'touch-id'
         }
     }
-    
+
     return 'unknown'
 }
 
@@ -254,7 +284,7 @@ export const getAppleBiometricType = (): 'touch-id' | 'face-id' | 'unknown' => {
  */
 export const getBiometricDisplayName = (): string => {
     const biometricType = getAppleBiometricType()
-    
+
     switch (biometricType) {
         case 'touch-id':
             return 'Touch ID'
@@ -271,6 +301,6 @@ export const getBiometricDisplayName = (): string => {
 export const isBiometricSupported = async (): Promise<boolean> => {
     const isSupported = isWebAuthnSupported()
     const isPlatformAvailable = await isPlatformAuthenticatorAvailable()
-    
+
     return isSupported && isPlatformAvailable && isAppleDevice()
 }

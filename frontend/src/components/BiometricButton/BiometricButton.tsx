@@ -1,17 +1,19 @@
-import { FC, useState, useEffect } from 'react'
-import { Button } from '../Button/Button'
+import { FC, useEffect, useState } from 'react'
+
 import {
-    isBiometricSupported,
-    getBiometricDisplayName,
-    getAppleBiometricType,
-    getCompatibilityInfo
-} from '../../utils/webauthn'
-import {
+    authenticateWithBiometric,
     hasBiometricCredentials,
     registerBiometric,
-    authenticateWithBiometric
 } from '../../api/biometric'
 
+import {
+    getAppleBiometricType,
+    getBiometricDisplayName,
+    getCompatibilityInfo,
+    isBiometricSupported,
+} from '../../utils/webauthn'
+
+import { Button } from '../Button/Button'
 import styles from './BiometricButton.module.css'
 
 export interface BiometricButtonProps {
@@ -23,12 +25,14 @@ export interface BiometricButtonProps {
 export const BiometricButton: FC<BiometricButtonProps> = ({
     onSuccess,
     onError,
-    masterPassword
+    masterPassword,
 }) => {
     const [isSupported, setIsSupported] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [hasCredentials, setHasCredentials] = useState(false)
-    const [biometricType, setBiometricType] = useState<'touch-id' | 'face-id' | 'unknown'>('unknown')
+    const [biometricType, setBiometricType] = useState<
+        'touch-id' | 'face-id' | 'unknown'
+    >('unknown')
     const [compatibilityInfo, setCompatibilityInfo] = useState<any>(null)
     const [showDetails, setShowDetails] = useState(false)
 
@@ -36,23 +40,27 @@ export const BiometricButton: FC<BiometricButtonProps> = ({
         const checkSupport = async () => {
             const supported = await isBiometricSupported()
             const compInfo = await getCompatibilityInfo()
-            
+
             setIsSupported(supported)
             setCompatibilityInfo(compInfo)
-            
+
             if (supported) {
                 setHasCredentials(await hasBiometricCredentials())
                 setBiometricType(getAppleBiometricType())
             }
         }
-        
+
         checkSupport()
     }, [])
 
     const handleBiometricAuth = async () => {
         console.log('🎯 handleBiometricAuth вызван')
-        console.log('Параметры:', { isSupported, hasCredentials, masterPassword: !!masterPassword })
-        
+        console.log('Параметры:', {
+            isSupported,
+            hasCredentials,
+            masterPassword: !!masterPassword,
+        })
+
         if (!isSupported) {
             console.log('❌ Биометрия не поддерживается')
             onError?.('Биометрическая аутентификация не поддерживается')
@@ -77,39 +85,55 @@ export const BiometricButton: FC<BiometricButtonProps> = ({
                 // Первичная регистрация - отправляем мастер-пароль на сервер
                 if (!masterPassword) {
                     console.log('❌ Мастер-пароль не предоставлен')
-                    onError?.('Мастер-пароль не предоставлен для регистрации биометрии')
+                    onError?.(
+                        'Мастер-пароль не предоставлен для регистрации биометрии'
+                    )
                     return
                 }
-                
+
                 console.log('🔄 Вызываем registerBiometric...')
                 const result = await registerBiometric('user', masterPassword)
                 console.log('✅ registerBiometric завершен, результат:', result)
-                
+
                 if (typeof result === 'number') {
                     // Обработка HTTP статус кодов
                     switch (result) {
                         case 403:
-                            throw new Error('Требуется авторизация. Пожалуйста, войдите в систему заново.')
+                            throw new Error(
+                                'Требуется авторизация. Пожалуйста, войдите в систему заново.'
+                            )
                         case 400:
-                            throw new Error('Неверные данные для регистрации биометрии')
+                            throw new Error(
+                                'Неверные данные для регистрации биометрии'
+                            )
                         case 500:
-                            throw new Error('Ошибка сервера при регистрации биометрии')
+                            throw new Error(
+                                'Ошибка сервера при регистрации биометрии'
+                            )
                         default:
-                            throw new Error(`Ошибка регистрации биометрии (код: ${result})`)
+                            throw new Error(
+                                `Ошибка регистрации биометрии (код: ${result})`
+                            )
                     }
                 }
-                
+
                 if (!result.success) {
-                    throw new Error(result.message || 'Не удалось зарегистрировать биометрию')
+                    throw new Error(
+                        result.message ||
+                            'Не удалось зарегистрировать биометрию'
+                    )
                 }
-                
+
                 setHasCredentials(true)
                 console.log('🎉 Регистрация завершена успешно')
                 onSuccess()
             }
         } catch (error) {
             console.error('❌ ОШИБКА в handleBiometricAuth:', error)
-            const message = error instanceof Error ? error.message : 'Ошибка биометрической аутентификации'
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'Ошибка биометрической аутентификации'
             onError?.(message)
         } finally {
             console.log('🔄 Устанавливаем isLoading = false')
@@ -130,8 +154,8 @@ export const BiometricButton: FC<BiometricButtonProps> = ({
 
     const getButtonText = () => {
         const displayName = getBiometricDisplayName()
-        return hasCredentials 
-            ? `Войти с ${displayName}` 
+        return hasCredentials
+            ? `Войти с ${displayName}`
             : `Настроить ${displayName}`
     }
 
@@ -151,25 +175,40 @@ export const BiometricButton: FC<BiometricButtonProps> = ({
                     <span className={styles.icon}>⚠️</span>
                     <span>Биометрия недоступна</span>
                 </Button>
-                
+
                 {showDetails && (
                     <div className={styles.detailsPanel}>
                         <h4>Информация о совместимости:</h4>
                         <ul>
                             <li>Устройство: {compatibilityInfo.device}</li>
-                            <li>Браузер: {compatibilityInfo.browser.name} {compatibilityInfo.browser.version || ''}</li>
-                            <li>HTTPS: {compatibilityInfo.https ? '✅' : '❌'}</li>
-                            <li>WebAuthn: {compatibilityInfo.webauthn ? '✅' : '❌'}</li>
-                            <li>Биометрия: {compatibilityInfo.platformAuthenticator ? '✅' : '❌'}</li>
+                            <li>
+                                Браузер: {compatibilityInfo.browser.name}{' '}
+                                {compatibilityInfo.browser.version || ''}
+                            </li>
+                            <li>
+                                HTTPS: {compatibilityInfo.https ? '✅' : '❌'}
+                            </li>
+                            <li>
+                                WebAuthn:{' '}
+                                {compatibilityInfo.webauthn ? '✅' : '❌'}
+                            </li>
+                            <li>
+                                Биометрия:{' '}
+                                {compatibilityInfo.platformAuthenticator
+                                    ? '✅'
+                                    : '❌'}
+                            </li>
                         </ul>
-                        
+
                         {compatibilityInfo.recommendations.length > 0 && (
                             <>
                                 <h4>Рекомендации:</h4>
                                 <ul>
-                                    {compatibilityInfo.recommendations.map((rec: string, index: number) => (
-                                        <li key={index}>{rec}</li>
-                                    ))}
+                                    {compatibilityInfo.recommendations.map(
+                                        (rec: string, index: number) => (
+                                            <li key={index}>{rec}</li>
+                                        )
+                                    )}
                                 </ul>
                             </>
                         )}
@@ -191,12 +230,14 @@ export const BiometricButton: FC<BiometricButtonProps> = ({
                 <span className={styles.icon}>{getBiometricIcon()}</span>
                 <span>{getButtonText()}</span>
             </Button>
-            
+
             {compatibilityInfo && (
                 <div className={styles.supportInfo}>
                     <small>
-                        {compatibilityInfo.browser.name} на {compatibilityInfo.device}
-                        {!compatibilityInfo.browser.isSupported && ' (ограниченная поддержка)'}
+                        {compatibilityInfo.browser.name} на{' '}
+                        {compatibilityInfo.device}
+                        {!compatibilityInfo.browser.isSupported &&
+                            ' (ограниченная поддержка)'}
                     </small>
                 </div>
             )}

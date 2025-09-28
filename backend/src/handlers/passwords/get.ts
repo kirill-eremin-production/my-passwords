@@ -1,11 +1,11 @@
-import { Request, Response } from "express";
+import { Request, Response } from 'express'
 
-import { readStore } from "../../store.js";
+import { readStore } from '../../store.js'
 
 export function getPasswords(req: Request, res: Response) {
-  const storeData = readStore();
+    const storeData = readStore()
 
-  res.json({
-    data: storeData,
-  });
+    res.json({
+        data: storeData,
+    })
 }

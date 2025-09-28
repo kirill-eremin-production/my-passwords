@@ -1,1 +1,1 @@
-export { validateSession } from "./post";
+export { validateSession } from './post'

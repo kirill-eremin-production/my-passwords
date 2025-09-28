@@ -1,109 +1,110 @@
 import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  jest,
-  test,
-} from "@jest/globals";
-import { Request } from "express";
-import { writeFileSync } from "fs";
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    jest,
+    test,
+} from '@jest/globals'
+import { Request } from 'express'
+import { writeFileSync } from 'fs'
 
-import { authorizationMiddleware } from "./authorizationMiddleware";
-import { getResponseMock } from "../../_tests/utils/responseMock";
-import { clearSessionStore } from "../../_tests/utils/sessionStore";
-import { sessionsFilePath } from "../../sessionsStore";
+import { getResponseMock } from '../../_tests/utils/responseMock'
+import { clearSessionStore } from '../../_tests/utils/sessionStore'
 
-describe("authorizationMiddleware", () => {
-  const testSessionId = "test-sessionId";
+import { sessionsFilePath } from '../../sessionsStore'
+import { authorizationMiddleware } from './authorizationMiddleware'
 
-  beforeEach(() => {
-    clearSessionStore();
-  });
+describe('authorizationMiddleware', () => {
+    const testSessionId = 'test-sessionId'
 
-  afterEach(() => {
-    clearSessionStore();
-    jest.clearAllMocks();
-  });
+    beforeEach(() => {
+        clearSessionStore()
+    })
 
-  test("Когда: в запросе нет сессии; Тогда: возвращает 403 статус", () => {
-    // Arrange
-    const nextFnMock = jest.fn();
-    const response = getResponseMock();
+    afterEach(() => {
+        clearSessionStore()
+        jest.clearAllMocks()
+    })
 
-    // Act
-    authorizationMiddleware({} as Request, response, nextFnMock);
+    test('Когда: в запросе нет сессии; Тогда: возвращает 403 статус', () => {
+        // Arrange
+        const nextFnMock = jest.fn()
+        const response = getResponseMock()
 
-    // Assert
-    expect(nextFnMock).not.toBeCalled();
+        // Act
+        authorizationMiddleware({} as Request, response, nextFnMock)
 
-    expect(response.status).toBeCalledTimes(1);
-    expect(response.status).toHaveBeenCalledWith(403);
+        // Assert
+        expect(nextFnMock).not.toBeCalled()
 
-    expect(response.end).toBeCalledTimes(1);
-  });
+        expect(response.status).toBeCalledTimes(1)
+        expect(response.status).toHaveBeenCalledWith(403)
 
-  test("Когда: в запросе есть невалидная сессия; Тогда: возвращает 403 статус", () => {
-    // Arrange
-    const nextFnMock = jest.fn();
-    const response = getResponseMock();
+        expect(response.end).toBeCalledTimes(1)
+    })
 
-    writeFileSync(
-      sessionsFilePath,
-      JSON.stringify({
-        [testSessionId]: {
-          sessionId: testSessionId,
-          time: 125,
-          code: null,
-          valid: false,
-        },
-      })
-    );
+    test('Когда: в запросе есть невалидная сессия; Тогда: возвращает 403 статус', () => {
+        // Arrange
+        const nextFnMock = jest.fn()
+        const response = getResponseMock()
 
-    // Act
-    authorizationMiddleware(
-      { cookies: { sessionId: testSessionId } } as Request,
-      response,
-      nextFnMock
-    );
+        writeFileSync(
+            sessionsFilePath,
+            JSON.stringify({
+                [testSessionId]: {
+                    sessionId: testSessionId,
+                    time: 125,
+                    code: null,
+                    valid: false,
+                },
+            })
+        )
 
-    // Assert
-    expect(nextFnMock).not.toBeCalled();
+        // Act
+        authorizationMiddleware(
+            { cookies: { sessionId: testSessionId } } as Request,
+            response,
+            nextFnMock
+        )
 
-    expect(response.status).toBeCalledTimes(1);
-    expect(response.status).toHaveBeenCalledWith(403);
+        // Assert
+        expect(nextFnMock).not.toBeCalled()
 
-    expect(response.end).toBeCalledTimes(1);
-  });
+        expect(response.status).toBeCalledTimes(1)
+        expect(response.status).toHaveBeenCalledWith(403)
 
-  test("Когда: в запросе есть валидная сессия; Тогда: вызывает функцию next()", () => {
-    // Arrange
-    const nextFnMock = jest.fn();
-    const response = getResponseMock();
+        expect(response.end).toBeCalledTimes(1)
+    })
 
-    writeFileSync(
-      sessionsFilePath,
-      JSON.stringify({
-        [testSessionId]: {
-          sessionId: testSessionId,
-          time: 125,
-          code: null,
-          valid: true,
-        },
-      })
-    );
+    test('Когда: в запросе есть валидная сессия; Тогда: вызывает функцию next()', () => {
+        // Arrange
+        const nextFnMock = jest.fn()
+        const response = getResponseMock()
 
-    // Act
-    authorizationMiddleware(
-      { cookies: { sessionId: testSessionId } } as Request,
-      response,
-      nextFnMock
-    );
+        writeFileSync(
+            sessionsFilePath,
+            JSON.stringify({
+                [testSessionId]: {
+                    sessionId: testSessionId,
+                    time: 125,
+                    code: null,
+                    valid: true,
+                },
+            })
+        )
 
-    // Assert
-    expect(nextFnMock).toBeCalledTimes(1);
+        // Act
+        authorizationMiddleware(
+            { cookies: { sessionId: testSessionId } } as Request,
+            response,
+            nextFnMock
+        )
 
-    expect(response.status).not.toBeCalled();
-    expect(response.end).not.toBeCalled();
-  });
-});
+        // Assert
+        expect(nextFnMock).toBeCalledTimes(1)
+
+        expect(response.status).not.toBeCalled()
+        expect(response.end).not.toBeCalled()
+    })
+})

@@ -1,0 +1,23 @@
+{
+  "name": "my-passwords",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "prettier:frontend": "cd frontend && npm run prettier:fix",
+    "prettier:backend": "cd backend && npm run prettier:fix",
+    "prettier:all": "npm run prettier:frontend && npm run prettier:backend",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0"
+  },
+  "lint-staged": {
+    "frontend/src/**/*.{ts,tsx,css}": [
+      "cd frontend && npm run prettier:fix"
+    ],
+    "backend/src/**/*.{ts,js}": [
+      "cd backend && npm run prettier:fix"
+    ]
+  }
+}

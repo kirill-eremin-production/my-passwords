@@ -1,10 +1,12 @@
 import { FC, FormEventHandler } from 'react'
-import { Password } from '../../types/passwords'
-import { Input } from '../Input/Input'
-import { Button } from '../Button/Button'
-import { toStringOrUndefined } from '../../utils/toStringOrUndefined'
-import { CopyButton } from '../CopyButton/CopyButton'
 
+import { Password } from '../../types/passwords'
+
+import { toStringOrUndefined } from '../../utils/toStringOrUndefined'
+
+import { Button } from '../Button/Button'
+import { CopyButton } from '../CopyButton/CopyButton'
+import { Input } from '../Input/Input'
 import styles from './PasswordForm.module.css'
 
 export interface PasswordFormProps {

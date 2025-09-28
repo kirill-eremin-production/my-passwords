@@ -1,5 +1,7 @@
 import { FC } from 'react'
+
 import { Passwords } from '../../types/passwords'
+
 import { Button } from '../Button/Button'
 
 export interface PasswordsListProps {

@@ -1,3 +1,3 @@
 export function generateConfirmationCode(): number {
-  return Math.floor(100000 + Math.random() * 900000);
+    return Math.floor(100000 + Math.random() * 900000)
 }

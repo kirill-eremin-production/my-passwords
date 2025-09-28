@@ -1,3 +1,3 @@
-import { writeSessionsStore } from "../../sessionsStore";
+import { writeSessionsStore } from '../../sessionsStore'
 
-export const clearSessionStore = () => writeSessionsStore("{}");
+export const clearSessionStore = () => writeSessionsStore('{}')

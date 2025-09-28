@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from 'express'
 
-import { getSessionFromReq } from "./utils";
+import { getSessionFromReq } from './utils'
 
 /**
  * Когда: в запросе нет валидной сессии
@@ -11,18 +11,18 @@ import { getSessionFromReq } from "./utils";
  * Тогда: идем дальше
  */
 export function authorizationMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) {
-  const session = getSessionFromReq(req);
+    const session = getSessionFromReq(req)
 
-  if (!session?.valid) {
-    res.status(403);
-    res.end();
-    return;
-  }
+    if (!session?.valid) {
+        res.status(403)
+        res.end()
+        return
+    }
 
-  next();
-  return;
+    next()
+    return
 }

@@ -2,3 +2,4 @@
 nginx/ssl/*
 env
 store
+node_modules

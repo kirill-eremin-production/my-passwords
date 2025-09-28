@@ -52,7 +52,7 @@
         border-color: rgba(255, 255, 255, 0.3);
         color: rgba(255, 255, 255, 0.8);
     }
-    
+
     .biometricButton:hover {
         border-color: rgba(255, 255, 255, 0.5);
         background-color: rgba(255, 255, 255, 0.1);
@@ -65,7 +65,7 @@
         border-color: rgba(0, 0, 0, 0.2);
         color: rgba(0, 0, 0, 0.7);
     }
-    
+
     .biometricButton:hover {
         border-color: rgba(0, 0, 0, 0.4);
         background-color: rgba(0, 0, 0, 0.05);
@@ -122,11 +122,11 @@
         border-color: #ff9800;
         color: #ff9800;
     }
-    
+
     .unsupportedButton:hover {
         background-color: rgba(255, 152, 0, 0.1);
     }
-    
+
     .detailsPanel {
         background-color: rgba(255, 255, 255, 0.05);
         border-color: rgba(255, 255, 255, 0.1);

@@ -1,65 +1,66 @@
 import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  jest,
-  test,
-} from "@jest/globals";
-import { Request } from "express";
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    jest,
+    test,
+} from '@jest/globals'
+import { Request } from 'express'
 
-import { validateSession } from "./post";
+import { getResponseMock } from '../../_tests/utils/responseMock'
+import { clearSessionStore } from '../../_tests/utils/sessionStore'
+import { generateConfirmationCode } from '../../utils/generateConfirmationCode'
 
-import { getResponseMock } from "../../_tests/utils/responseMock";
-import { clearSessionStore } from "../../_tests/utils/sessionStore";
-import { generateConfirmationCode } from "../../utils/generateConfirmationCode";
-import { readSessionById, storeSession } from "../../sessionsStore";
-describe("handlers/auth/post", () => {
-  const testSessionId = "test-sessionId";
+import { readSessionById, storeSession } from '../../sessionsStore'
+import { validateSession } from './post'
 
-  beforeEach(() => {
-    clearSessionStore();
-  });
+describe('handlers/auth/post', () => {
+    const testSessionId = 'test-sessionId'
 
-  afterEach(() => {
-    clearSessionStore();
-    jest.clearAllMocks();
-  });
+    beforeEach(() => {
+        clearSessionStore()
+    })
 
-  test("Когда: в запросе пришел ожидаемый код подтверждения; Тогда: делаем сессию валидной", () => {
-    // Подготовка
-    const responseMock = getResponseMock();
+    afterEach(() => {
+        clearSessionStore()
+        jest.clearAllMocks()
+    })
 
-    const code = generateConfirmationCode();
-    storeSession({
-      sessionId: testSessionId,
-      time: 60125,
-      valid: false,
-      code: String(code),
-    });
+    test('Когда: в запросе пришел ожидаемый код подтверждения; Тогда: делаем сессию валидной', () => {
+        // Подготовка
+        const responseMock = getResponseMock()
 
-    // Действие
-    validateSession(
-      {
-        cookies: { sessionId: testSessionId },
-        body: { data: { code } },
-      } as Request,
-      responseMock
-    );
+        const code = generateConfirmationCode()
+        storeSession({
+            sessionId: testSessionId,
+            time: 60125,
+            valid: false,
+            code: String(code),
+        })
 
-    // Проверка
-    expect(responseMock.sendStatus).toBeCalledWith(200);
+        // Действие
+        validateSession(
+            {
+                cookies: { sessionId: testSessionId },
+                body: { data: { code } },
+            } as Request,
+            responseMock
+        )
 
-    const session = readSessionById(testSessionId);
-    expect(session?.valid).toBe(true);
-  });
+        // Проверка
+        expect(responseMock.sendStatus).toBeCalledWith(200)
 
-  test("Иначе: отправляет 403 статус", () => {
-    const responseMock = getResponseMock();
+        const session = readSessionById(testSessionId)
+        expect(session?.valid).toBe(true)
+    })
 
-    validateSession({ cookies: { sessionId: "" } } as Request, responseMock);
+    test('Иначе: отправляет 403 статус', () => {
+        const responseMock = getResponseMock()
 
-    expect(responseMock.sendStatus).toBeCalledTimes(1);
-    expect(responseMock.sendStatus).toBeCalledWith(403);
-  });
-});
+        validateSession({ cookies: { sessionId: '' } } as Request, responseMock)
+
+        expect(responseMock.sendStatus).toBeCalledTimes(1)
+        expect(responseMock.sendStatus).toBeCalledWith(403)
+    })
+})

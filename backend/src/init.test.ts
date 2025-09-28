@@ -1,56 +1,58 @@
 import {
-  describe,
-  test,
-  expect,
-  jest,
-  afterEach,
-  beforeEach,
-} from "@jest/globals";
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    jest,
+    test,
+} from '@jest/globals'
 
-import { init } from "./init";
-import * as SessionStore from "./sessionsStore";
-import * as Store from "./store";
-import { MIN } from "./constants";
+import { MIN } from './constants'
+import { init } from './init'
+import * as SessionStore from './sessionsStore'
+import * as Store from './store'
 
-jest.mock("");
+jest.mock('')
 
-describe("init", () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
+describe('init', () => {
+    beforeEach(() => {
+        jest.useFakeTimers()
+    })
 
-  afterEach(() => {
-    jest.resetAllMocks();
-    jest.clearAllTimers();
-  });
+    afterEach(() => {
+        jest.resetAllMocks()
+        jest.clearAllTimers()
+    })
 
-  test("prepares the passwords store", () => {
-    jest.spyOn(Store, "prepareStore");
+    test('prepares the passwords store', () => {
+        jest.spyOn(Store, 'prepareStore')
 
-    init();
+        init()
 
-    expect(Store.prepareStore).toHaveBeenCalledTimes(1);
-  });
+        expect(Store.prepareStore).toHaveBeenCalledTimes(1)
+    })
 
-  test("prepares the sessions store", () => {
-    jest.spyOn(SessionStore, "prepareSessionsStore");
+    test('prepares the sessions store', () => {
+        jest.spyOn(SessionStore, 'prepareSessionsStore')
 
-    init();
+        init()
 
-    expect(SessionStore.prepareSessionsStore).toHaveBeenCalledTimes(1);
-  });
+        expect(SessionStore.prepareSessionsStore).toHaveBeenCalledTimes(1)
+    })
 
-  test("deletes expired sessions every minute", () => {
-    jest.spyOn(SessionStore, "removeExpiredSessionsFromSessionStore");
+    test('deletes expired sessions every minute', () => {
+        jest.spyOn(SessionStore, 'removeExpiredSessionsFromSessionStore')
 
-    init();
+        init()
 
-    expect(SessionStore.removeExpiredSessionsFromSessionStore).not.toBeCalled();
+        expect(
+            SessionStore.removeExpiredSessionsFromSessionStore
+        ).not.toBeCalled()
 
-    jest.advanceTimersByTime(5 * MIN);
+        jest.advanceTimersByTime(5 * MIN)
 
-    expect(
-      SessionStore.removeExpiredSessionsFromSessionStore
-    ).toHaveBeenCalledTimes(5);
-  });
-});
+        expect(
+            SessionStore.removeExpiredSessionsFromSessionStore
+        ).toHaveBeenCalledTimes(5)
+    })
+})

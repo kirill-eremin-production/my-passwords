@@ -1,11 +1,15 @@
-import { FC, FormEventHandler, useState, useEffect } from 'react'
+import { FC, FormEventHandler, useEffect, useState } from 'react'
+
 import { useNavigate } from 'react-router-dom'
+
+import { hasBiometricCredentials } from '../../api/biometric'
+
+import { BiometricButton } from '../../components/BiometricButton'
 import { Button } from '../../components/Button/Button'
 import { Input } from '../../components/Input/Input'
 import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
-import { BiometricButton } from '../../components/BiometricButton'
-import { hasBiometricCredentials } from '../../api/biometric'
+
 import { usePasswordStore } from '../../stores/passwordStore'
 
 import styles from './MasterPassword.module.css'

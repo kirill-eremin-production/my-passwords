@@ -1,1 +1,1 @@
-export { generateAndSendCode } from "./post";
+export { generateAndSendCode } from './post'

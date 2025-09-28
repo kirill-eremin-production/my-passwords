@@ -1,8 +1,9 @@
 import { FC, useCallback, useEffect, useState } from 'react'
 
-import { useSendAuthCode } from '../../query/useSendAuthCode'
 import { Button } from '../../../../components/Button/Button'
 import { Text } from '../../../../components/Text/Text'
+
+import { useSendAuthCode } from '../../query/useSendAuthCode'
 
 export const SendTelegramAuthCodeButton: FC = () => {
     const {

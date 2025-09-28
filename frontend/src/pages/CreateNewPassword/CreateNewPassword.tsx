@@ -1,11 +1,15 @@
 import { FC } from 'react'
+
 import { useNavigate } from 'react-router-dom'
-import { PasswordForm } from '../../components/PasswordForm/PasswordForm'
+
 import { Button } from '../../components/Button/Button'
-import { Password } from '../../types/passwords'
 import { Logo } from '../../components/Logo/Logo'
+import { PasswordForm } from '../../components/PasswordForm/PasswordForm'
 import { Text } from '../../components/Text/Text'
+
 import { usePasswordStore } from '../../stores/passwordStore'
+
+import { Password } from '../../types/passwords'
 
 export const CreateNewPassword: FC = () => {
     const navigate = useNavigate()
@@ -26,7 +30,11 @@ export const CreateNewPassword: FC = () => {
             <Logo />
             <Text size="title36">Секрет</Text>
             <PasswordForm password={{}} onSubmit={onPasswordFormSubmit} />
-            <Button fullWidth onClick={() => navigate('/passwords')} theme="second">
+            <Button
+                fullWidth
+                onClick={() => navigate('/passwords')}
+                theme="second"
+            >
                 Назад
             </Button>
         </div>
