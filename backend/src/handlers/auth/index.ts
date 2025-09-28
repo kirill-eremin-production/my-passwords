@@ -1,1 +1,0 @@
-export { validateSession } from './post'

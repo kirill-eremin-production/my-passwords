@@ -1,1 +1,0 @@
-export { generateAndSendCode } from './post'

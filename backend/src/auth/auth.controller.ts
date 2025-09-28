@@ -8,12 +8,22 @@ import {
   HttpCode
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { IsOptional, IsObject, ValidateNested, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 import { AuthService } from './auth.service';
 
+class CodeDataDto {
+  @IsOptional()
+  @IsString()
+  code?: string;
+}
+
 export class ValidateSessionDto {
-  data?: {
-    code?: string;
-  };
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => CodeDataDto)
+  data?: CodeDataDto;
 }
 
 @Controller('auth')

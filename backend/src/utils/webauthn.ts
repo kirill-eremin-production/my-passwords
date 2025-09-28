@@ -1,175 +1,204 @@
-import { verifyAuthenticationResponse } from '@simplewebauthn/server'
-import type {
-    VerifiedAuthenticationResponse,
-    VerifyAuthenticationResponseOpts,
-} from '@simplewebauthn/server'
-
-import { BiometricCredential } from '../types/biometric'
-
-/**
- * Проверяет WebAuthn подпись и возвращает результат верификации
- */
-export async function verifyWebAuthnSignature(
-    credentialId: string,
-    authenticatorData: string,
-    clientDataJSON: string,
-    signature: string,
-    challenge: string,
-    credential: BiometricCredential,
-    expectedOrigin: string
-): Promise<VerifiedAuthenticationResponse> {
-    // Функция для конверсии base64 в base64url
-    const toBase64url = (base64: string): string => {
-        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-    }
-
-    // Преобразуем все данные из base64 в base64url для совместимости с @simplewebauthn/server
-    const base64urlChallenge = toBase64url(challenge)
-    const base64urlAuthenticatorData = toBase64url(authenticatorData)
-    const base64urlClientDataJSON = toBase64url(clientDataJSON)
-    const base64urlSignature = toBase64url(signature)
-    const base64urlCredentialId = toBase64url(credentialId)
-
-    console.log('🔍 Base64 -> Base64url конверсия:')
-    console.log('  - Challenge:', base64urlChallenge)
-    console.log(
-        '  - AuthenticatorData:',
-        base64urlAuthenticatorData.substring(0, 20) + '...'
-    )
-    console.log(
-        '  - ClientDataJSON:',
-        base64urlClientDataJSON.substring(0, 20) + '...'
-    )
-    console.log('  - Signature:', base64urlSignature.substring(0, 20) + '...')
-    console.log('  - CredentialId:', base64urlCredentialId)
-
-    // Подготавливаем данные для верификации
-    const verification: VerifyAuthenticationResponseOpts = {
-        response: {
-            id: base64urlCredentialId,
-            rawId: base64urlCredentialId,
-            response: {
-                authenticatorData: base64urlAuthenticatorData,
-                clientDataJSON: base64urlClientDataJSON,
-                signature: base64urlSignature,
-            },
-            type: 'public-key',
-            clientExtensionResults: {},
-        },
-        expectedChallenge: base64urlChallenge,
-        expectedOrigin,
-        expectedRPID:
-            process.env.WEBAUTHN_RP_ID || 'local.passwords.keremin.ru',
-        credential: {
-            id: credential.id,
-            publicKey: new Uint8Array(
-                Buffer.from(credential.publicKey, 'base64')
-            ),
-            counter: credential.counter,
-        },
-        requireUserVerification: true,
-    }
-
-    return await verifyAuthenticationResponse(verification)
-}
-
-/**
- * Проверяет базовые данные WebAuthn
- */
-export function validateWebAuthnClientData(
-    clientDataJSON: string,
-    expectedChallenge: string,
-    expectedOrigin: string
-): { isValid: boolean; error?: string } {
-    try {
-        const clientData = JSON.parse(
-            Buffer.from(clientDataJSON, 'base64').toString()
-        )
-
-        console.log('🔍 Детали валидации clientData:')
-        console.log('  - clientData.type:', clientData.type)
-        console.log('  - clientData.challenge:', clientData.challenge)
-        console.log('  - expectedChallenge:', expectedChallenge)
-        console.log('  - clientData.origin:', clientData.origin)
-        console.log('  - expectedOrigin:', expectedOrigin)
-
-        // Проверка типа операции
-        if (clientData.type !== 'webauthn.get') {
-            console.log('❌ Неверный тип операции WebAuthn')
-            return { isValid: false, error: 'Неверный тип операции WebAuthn' }
-        }
-
-        // Проверка challenge - может быть проблема с base64 vs base64url
-        const clientChallenge = clientData.challenge
-
-        // Пробуем разные варианты сравнения challenge
-        const challengeMatch =
-            clientChallenge === expectedChallenge ||
-            clientChallenge ===
-                expectedChallenge
-                    .replace(/\+/g, '-')
-                    .replace(/\//g, '_')
-                    .replace(/=/g, '') ||
-            clientChallenge
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=/g, '') === expectedChallenge
-
-        if (!challengeMatch) {
-            console.log('❌ Challenge не совпадает')
-            console.log(
-                '  - Прямое сравнение:',
-                clientChallenge === expectedChallenge
-            )
-            console.log(
-                '  - base64 vs base64url сравнение доступно для отладки'
-            )
-            return { isValid: false, error: 'Неверный challenge' }
-        }
-
-        console.log('✅ Challenge совпадает')
-
-        // Проверка origin
-        if (clientData.origin !== expectedOrigin) {
-            console.log('❌ Origin не совпадает')
-            return { isValid: false, error: 'Неверный origin' }
-        }
-
-        console.log('✅ Все проверки прошли успешно')
-        return { isValid: true }
-    } catch (error) {
-        console.log('❌ Ошибка парсинга clientDataJSON:', error)
-        return { isValid: false, error: 'Ошибка парсинга clientDataJSON' }
-    }
-}
+import { verifyAuthenticationResponse } from '@simplewebauthn/server';
+import type { VerifyAuthenticationResponseOpts } from '@simplewebauthn/server';
+import { createHash } from 'crypto';
 
 /**
  * Извлекает counter из authenticatorData
+ * Counter находится в байтах 33-36 authenticatorData
  */
-export function extractCounterFromAuthenticatorData(
-    authenticatorData: string
-): number {
-    try {
-        const authDataBuffer = Buffer.from(authenticatorData, 'base64')
-
-        // Counter находится в байтах 33-36 (4 байта, big-endian)
-        if (authDataBuffer.length < 37) {
-            throw new Error('Недостаточная длина authenticatorData')
-        }
-
-        return authDataBuffer.readUInt32BE(33)
-    } catch (error) {
-        console.error('Ошибка извлечения counter:', error)
-        return -1
+export function extractCounterFromAuthenticatorData(authenticatorData: string): number {
+  try {
+    const buffer = Buffer.from(authenticatorData, 'base64');
+    
+    // Counter занимает 4 байта начиная с позиции 33
+    if (buffer.length < 37) {
+      console.error('authenticatorData слишком короткий для извлечения counter');
+      return -1;
     }
+    
+    // Читаем 4 байта как big-endian unsigned integer
+    const counter = buffer.readUInt32BE(33);
+    
+    console.log(`🔍 Извлечен counter: ${counter} из authenticatorData длиной ${buffer.length} байт`);
+    return counter;
+  } catch (error) {
+    console.error('Ошибка извлечения counter из authenticatorData:', error);
+    return -1;
+  }
 }
 
 /**
- * Получает ожидаемый origin на основе окружения
+ * Получает ожидаемый origin для текущего окружения
  */
 export function getExpectedOrigin(): string {
-    if (process.env.NODE_ENV === 'production') {
-        return process.env.PRODUCTION_ORIGIN || 'https://passwords.keremin.ru'
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction) {
+    return process.env.WEBAUTHN_ORIGIN || 'https://passwords.keremin.ru';
+  } else {
+    return process.env.WEBAUTHN_ORIGIN || 'https://local.passwords.keremin.ru:3000';
+  }
+}
+
+/**
+ * Валидирует clientDataJSON для WebAuthn
+ */
+export function validateWebAuthnClientData(
+  clientDataJSON: string,
+  expectedChallenge: string,
+  expectedOrigin: string
+): { isValid: boolean; error?: string } {
+  try {
+    // Декодируем clientDataJSON
+    const clientData = JSON.parse(Buffer.from(clientDataJSON, 'base64').toString());
+    
+    console.log('🔍 Валидация clientData:');
+    console.log('  - type:', clientData.type);
+    console.log('  - challenge:', clientData.challenge);
+    console.log('  - origin:', clientData.origin);
+    console.log('  - expectedChallenge:', expectedChallenge);
+    console.log('  - expectedOrigin:', expectedOrigin);
+    
+    // Проверяем тип операции
+    if (clientData.type !== 'webauthn.get') {
+      return {
+        isValid: false,
+        error: `Неверный тип операции: ${clientData.type}, ожидался webauthn.get`
+      };
     }
-    return process.env.DEV_ORIGIN || 'https://local.passwords.keremin.ru:3001'
+    
+    // Проверяем challenge
+    if (clientData.challenge !== expectedChallenge) {
+      return {
+        isValid: false,
+        error: `Challenge не совпадает: получен ${clientData.challenge}, ожидался ${expectedChallenge}`
+      };
+    }
+    
+    // Проверяем origin
+    if (clientData.origin !== expectedOrigin) {
+      return {
+        isValid: false,
+        error: `Origin не совпадает: получен ${clientData.origin}, ожидался ${expectedOrigin}`
+      };
+    }
+    
+    return { isValid: true };
+  } catch (error) {
+    console.error('Ошибка валидации clientData:', error);
+    return {
+      isValid: false,
+      error: `Ошибка парсинга clientData: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
+    };
+  }
+}
+
+/**
+ * Верифицирует подпись WebAuthn используя @simplewebauthn/server
+ */
+export async function verifyWebAuthnSignature(
+  credentialId: string,
+  authenticatorData: string,
+  clientDataJSON: string,
+  signature: string,
+  expectedChallenge: string,
+  credential: { publicKey: string; counter: number },
+  expectedOrigin: string
+): Promise<{ verified: boolean; authenticationInfo?: any; error?: string }> {
+  try {
+    // Преобразуем данные в формат base64url для библиотеки
+    const toBase64url = (base64: string): string => {
+      return base64
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+    };
+
+    const expectedRPID = process.env.WEBAUTHN_RP_ID || 'local.passwords.keremin.ru';
+
+    console.log('🔄 Верифицируем WebAuthn подпись с @simplewebauthn/server...');
+    console.log('  - credentialId длина:', credentialId.length);
+    console.log('  - expectedOrigin:', expectedOrigin);
+    console.log('  - expectedRPID:', expectedRPID);
+    console.log('  - expectedChallenge:', expectedChallenge);
+    console.log('  - credential counter:', credential.counter);
+
+    // Подготавливаем данные для верификации
+    const verification: VerifyAuthenticationResponseOpts = {
+      response: {
+        id: toBase64url(credentialId),
+        rawId: toBase64url(credentialId),
+        response: {
+          authenticatorData: toBase64url(authenticatorData),
+          clientDataJSON: toBase64url(clientDataJSON),
+          signature: toBase64url(signature),
+        },
+        type: 'public-key',
+        clientExtensionResults: {},
+      },
+      expectedChallenge: toBase64url(expectedChallenge),
+      expectedOrigin,
+      expectedRPID,
+      credential: {
+        id: credentialId,
+        publicKey: new Uint8Array(Buffer.from(credential.publicKey, 'base64')),
+        counter: credential.counter,
+      },
+      requireUserVerification: true,
+    };
+
+    const verificationResult = await verifyAuthenticationResponse(verification);
+    
+    if (verificationResult.verified) {
+      console.log('✅ WebAuthn подпись верифицирована успешно');
+      console.log('  - новый counter:', verificationResult.authenticationInfo.newCounter);
+      
+      return {
+        verified: true,
+        authenticationInfo: verificationResult.authenticationInfo
+      };
+    } else {
+      console.error('❌ WebAuthn подпись не прошла верификацию');
+      return {
+        verified: false,
+        error: 'Подпись WebAuthn не прошла верификацию'
+      };
+    }
+  } catch (error) {
+    console.error('❌ Ошибка верификации WebAuthn подписи:', error);
+    return {
+      verified: false,
+      error: `Ошибка верификации: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
+    };
+  }
+}
+
+/**
+ * Вычисляет SHA-256 хеш от данных
+ */
+export function sha256(data: Buffer): Buffer {
+  return createHash('sha256').update(data as any).digest();
+}
+
+/**
+ * Конвертирует base64 в base64url
+ */
+export function base64ToBase64url(base64: string): string {
+  return base64
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+/**
+ * Конвертирует base64url в base64
+ */
+export function base64urlToBase64(base64url: string): string {
+  // Добавляем padding если необходимо
+  let padded = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  const paddingNeeded = 4 - (padded.length % 4);
+  if (paddingNeeded !== 4) {
+    padded += '='.repeat(paddingNeeded);
+  }
+  return padded;
 }

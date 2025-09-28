@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import { IsOptional, IsObject, ValidateNested, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 import { BiometricService } from './biometric.service';
 import { BiometricRegistrationRequest, BiometricAuthenticationRequest } from '../types/biometric';
 import { AuthGuard } from '../auth/guards/session.guard';
@@ -19,12 +21,56 @@ export class GenerateChallengeDto {
   // Пустой DTO, challenge генерируется автоматически
 }
 
+export class BiometricRegistrationRequestDto {
+  @IsString()
+  credentialId!: string;
+
+  @IsString()
+  publicKey!: string;
+
+  @IsString()
+  authenticatorData!: string;
+
+  @IsString()
+  clientDataJSON!: string;
+
+  @IsOptional()
+  @IsString()
+  attestationObject?: string;
+}
+
 export class RegisterBiometricDto {
-  data?: BiometricRegistrationRequest;
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => BiometricRegistrationRequestDto)
+  data?: BiometricRegistrationRequestDto;
+}
+
+export class BiometricAuthenticationRequestDto {
+  @IsString()
+  credentialId!: string;
+
+  @IsString()
+  authenticatorData!: string;
+
+  @IsString()
+  clientDataJSON!: string;
+
+  @IsString()
+  signature!: string;
+
+  @IsOptional()
+  @IsString()
+  userHandle?: string;
 }
 
 export class AuthenticateBiometricDto {
-  data?: BiometricAuthenticationRequest;
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => BiometricAuthenticationRequestDto)
+  data?: BiometricAuthenticationRequestDto;
 }
 
 @Controller('biometric')
