@@ -1,4 +1,4 @@
-import { FC, FormEventHandler, useState } from 'react'
+import { FC, FormEventHandler, useState, useEffect } from 'react'
 import { sendAuthCode } from '../../api/sendAuthCode'
 import { toStringOrUndefined } from '../../utils/toStringOrUndefined'
 import { Input } from '../../components/Input/Input'
@@ -7,6 +7,7 @@ import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
 import { SendTelegramAuthCodeButton } from '../../features/SendTelegramAuthCode'
 import { BiometricButton } from '../../components/BiometricButton'
+import { hasBiometricCredentials } from '../../api/biometric'
 
 import styles from './AuthPage.module.css'
 
@@ -15,9 +16,22 @@ export interface AuthPageProps {
     setMasterPassword: (value: string | null) => void
 }
 
-export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage, setMasterPassword }) => {
+export const AuthPage: FC<AuthPageProps> = ({
+    setIsAuthPage,
+    setMasterPassword,
+}) => {
     const [isError, setIsError] = useState<boolean>(false)
     const [biometricError, setBiometricError] = useState<string>('')
+    const [hasCredentials, setHasCredentials] = useState<boolean>(false)
+
+    useEffect(() => {
+        const checkBiometricCredentials = async () => {
+            const credentials = await hasBiometricCredentials()
+            setHasCredentials(credentials)
+        }
+
+        checkBiometricCredentials()
+    }, [])
 
     const onFormSubmit: FormEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault()
@@ -93,16 +107,16 @@ export const AuthPage: FC<AuthPageProps> = ({ setIsAuthPage, setMasterPassword }
                 </div>
             </form>
 
-            <BiometricButton
-                onSuccess={handleBiometricSuccess}
-                onError={handleBiometricError}
-            />
+            {hasCredentials && (
+                <BiometricButton
+                    onSuccess={handleBiometricSuccess}
+                    onError={handleBiometricError}
+                />
+            )}
 
             {biometricError && (
                 <div className={styles.biometricError}>
-                    <Text>
-                        {biometricError}
-                    </Text>
+                    <Text>{biometricError}</Text>
                 </div>
             )}
 

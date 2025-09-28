@@ -1,9 +1,10 @@
-import { FC, FormEventHandler, useState } from 'react'
+import { FC, FormEventHandler, useState, useEffect } from 'react'
 import { Button } from '../../components/Button/Button'
 import { Input } from '../../components/Input/Input'
 import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
 import { BiometricButton } from '../../components/BiometricButton'
+import { hasBiometricCredentials } from '../../api/biometric'
 
 import styles from './MasterPassword.module.css'
 
@@ -15,6 +16,16 @@ export const MasterPassword: FC<MasterPasswordProps> = ({
     setMasterPassword,
 }) => {
     const [biometricError, setBiometricError] = useState<string>('')
+    const [hasCredentials, setHasCredentials] = useState<boolean>(false)
+
+    useEffect(() => {
+        const checkBiometricCredentials = async () => {
+            const credentials = await hasBiometricCredentials()
+            setHasCredentials(credentials)
+        }
+
+        checkBiometricCredentials()
+    }, [])
     const onFormSubmit: FormEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault()
 
@@ -34,7 +45,9 @@ export const MasterPassword: FC<MasterPasswordProps> = ({
         if (masterPassword) {
             setMasterPassword(masterPassword)
         } else {
-            setBiometricError('Не удалось получить мастер-пароль из биометрических данных')
+            setBiometricError(
+                'Не удалось получить мастер-пароль из биометрических данных'
+            )
             setTimeout(() => setBiometricError(''), 5000)
         }
     }
@@ -67,12 +80,14 @@ export const MasterPassword: FC<MasterPasswordProps> = ({
                 </Button>
             </div>
 
-            <div className={styles.biometricSection}>
-                <BiometricButton
-                    onSuccess={handleBiometricSuccess}
-                    onError={handleBiometricError}
-                />
-            </div>
+            {hasCredentials && (
+                <div className={styles.biometricSection}>
+                    <BiometricButton
+                        onSuccess={handleBiometricSuccess}
+                        onError={handleBiometricError}
+                    />
+                </div>
+            )}
 
             {biometricError && (
                 <div className={styles.biometricError}>
