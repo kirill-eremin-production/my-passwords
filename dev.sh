@@ -17,4 +17,4 @@ done
 echo "Backend запущен! Запускаем frontend..."
 
 # Запускаем frontend
-cd ./frontend && npm run start
+cd ./frontend && npm run dev

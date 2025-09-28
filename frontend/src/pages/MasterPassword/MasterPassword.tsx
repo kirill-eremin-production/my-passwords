@@ -1,20 +1,18 @@
 import { FC, FormEventHandler, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '../../components/Button/Button'
 import { Input } from '../../components/Input/Input'
 import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
 import { BiometricButton } from '../../components/BiometricButton'
 import { hasBiometricCredentials } from '../../api/biometric'
+import { usePasswordStore } from '../../stores/passwordStore'
 
 import styles from './MasterPassword.module.css'
 
-export interface MasterPasswordProps {
-    setMasterPassword: (value: string | null) => void
-}
-
-export const MasterPassword: FC<MasterPasswordProps> = ({
-    setMasterPassword,
-}) => {
+export const MasterPassword: FC = () => {
+    const navigate = useNavigate()
+    const { setMasterPassword } = usePasswordStore()
     const [biometricError, setBiometricError] = useState<string>('')
     const [hasCredentials, setHasCredentials] = useState<boolean>(false)
 
@@ -35,6 +33,7 @@ export const MasterPassword: FC<MasterPasswordProps> = ({
 
         if (typeof inputMasterPassword === 'string') {
             setMasterPassword(inputMasterPassword)
+            navigate('/passwords')
             return
         }
 
@@ -44,6 +43,7 @@ export const MasterPassword: FC<MasterPasswordProps> = ({
     const handleBiometricSuccess = (masterPassword?: string) => {
         if (masterPassword) {
             setMasterPassword(masterPassword)
+            navigate('/passwords')
         } else {
             setBiometricError(
                 'Не удалось получить мастер-пароль из биометрических данных'

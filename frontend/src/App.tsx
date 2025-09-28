@@ -1,108 +1,91 @@
-import React, { useState } from 'react'
+import React from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import styles from './App.module.css'
 
+import { AuthPage } from './pages/AuthPage/AuthPage'
 import { MasterPassword } from './pages/MasterPassword/MasterPassword'
 import { List } from './pages/List/List'
-
-import { usePasswords } from './hooks/usePasswords'
 import { SelectedPassword } from './pages/SelectedPassword/SelectedPassword'
 import { CreateNewPassword } from './pages/CreateNewPassword/CreateNewPassword'
-import { AuthPage } from './pages/AuthPage/AuthPage'
-import { Password } from './types/passwords'
 import { LoadingPage } from './pages/LoadingPage/LoadingPage'
-import { QueryClient, QueryClientProvider } from 'react-query'
 
-const queryClient = new QueryClient()
+import { useAuthStore } from './stores/authStore'
+import { usePasswordStore } from './stores/passwordStore'
+import { ProtectedRoute } from './components/ProtectedRoute/ProtectedRoute'
 
 function App() {
-    const [isLoading, setIsLoading] = useState(true)
-    const [loadingMessage, setLoadingMessage] = useState('')
-    const [isCreateNewPasswordPage, setIsCreateNewPasswordPage] =
-        useState<boolean>(false)
-    const [isAuthPage, setIsAuthPage] = useState<boolean>(true)
+  const { isAuthenticated, isLoading, loadingMessage } = useAuthStore()
+  const { isMasterPasswordSet } = usePasswordStore()
 
-    const {
-        passwords,
-        addPassword,
-        updatePassword,
-        deletePassword,
-        isMasterPassword,
-        selectedPasswordId,
-        setMasterPassword,
-        setSelectedPasswordId,
-        masterPassword,
-    } = usePasswords({ setIsLoading, setIsAuthPage, setLoadingMessage })
-
-    const onCreateNewPasswordSave = (password: Password) => {
-        addPassword(password)
-    }
-
-    const onSaveSelectedPassword = (password: Password) => {
-        if (typeof selectedPasswordId !== 'number') {
-            return
-        }
-
-        updatePassword(selectedPasswordId, password)
-    }
-
-    const onDeleteSelectedPassword = () => {
-        if (typeof selectedPasswordId !== 'number') {
-            return
-        }
-
-        deletePassword(selectedPasswordId)
-    }
-
-    let page = (
-        <List
-            onGoToCreateNewPasswordPage={() => setIsCreateNewPasswordPage(true)}
-            onSelectPasswordFromList={setSelectedPasswordId}
-            passwords={passwords || []}
-            masterPassword={isMasterPassword ? masterPassword : undefined}
-        ></List>
-    )
-
-    if (!isMasterPassword) {
-        page = <MasterPassword setMasterPassword={setMasterPassword} />
-    }
-
-    if (typeof selectedPasswordId === 'number') {
-        page = (
-            <SelectedPassword
-                onDelete={onDeleteSelectedPassword}
-                onClose={() => setSelectedPasswordId(null)}
-                onSave={onSaveSelectedPassword}
-                passwords={passwords}
-                selectedPasswordId={selectedPasswordId}
-            />
-        )
-    }
-
-    if (isCreateNewPasswordPage) {
-        page = (
-            <CreateNewPassword
-                onSave={onCreateNewPasswordSave}
-                onGoBack={() => setIsCreateNewPasswordPage(false)}
-            />
-        )
-    }
-
-    if (isAuthPage) {
-        page = <AuthPage
-            setIsAuthPage={setIsAuthPage}
-            setMasterPassword={setMasterPassword}
-        />
-    }
-
-    if (isLoading) {
-        page = <LoadingPage message={loadingMessage} />
-    }
-
+  if (isLoading) {
     return (
-        <QueryClientProvider client={queryClient}>
-            <div className={styles.root}>{page}</div>
-        </QueryClientProvider>
+      <div className={styles.root}>
+        <LoadingPage message={loadingMessage} />
+      </div>
     )
+  }
+
+  return (
+    <div className={styles.root}>
+      <Routes>
+        {/* Публичные маршруты */}
+        <Route 
+          path="/auth" 
+          element={
+            isAuthenticated ? 
+            <Navigate to={isMasterPasswordSet ? "/passwords" : "/master-password"} replace /> : 
+            <AuthPage />
+          } 
+        />
+        
+        {/* Защищенные маршруты */}
+        <Route path="/master-password" element={
+          <ProtectedRoute>
+            {isMasterPasswordSet ? 
+              <Navigate to="/passwords" replace /> : 
+              <MasterPassword />
+            }
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/passwords" element={
+          <ProtectedRoute requireMasterPassword>
+            <List />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/passwords/new" element={
+          <ProtectedRoute requireMasterPassword>
+            <CreateNewPassword />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/passwords/:id" element={
+          <ProtectedRoute requireMasterPassword>
+            <SelectedPassword />
+          </ProtectedRoute>
+        } />
+        
+        {/* Редирект по умолчанию */}
+        <Route 
+          path="/" 
+          element={
+            <Navigate 
+              to={
+                !isAuthenticated ? "/auth" :
+                !isMasterPasswordSet ? "/master-password" : 
+                "/passwords"
+              } 
+              replace 
+            />
+          } 
+        />
+        
+        {/* 404 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
+  )
 }
 
 export default App

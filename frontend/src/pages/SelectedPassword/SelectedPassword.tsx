@@ -1,35 +1,56 @@
 import { FC } from 'react'
-import { Password, Passwords } from '../../types/passwords'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Password } from '../../types/passwords'
 import { Button } from '../../components/Button/Button'
 import { PasswordForm } from '../../components/PasswordForm/PasswordForm'
 import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
+import { usePasswordStore } from '../../stores/passwordStore'
 
 import styles from './SelectedPassword.module.css'
 
-export interface SelectedPasswordProps {
-    passwords: Passwords
-    selectedPasswordId: number
-    onClose: () => void
-    onSave: (password: Password) => void
-    onDelete: () => void
-}
-
-export const SelectedPassword: FC<SelectedPasswordProps> = ({
-    passwords,
-    selectedPasswordId,
-    onClose,
-    onSave,
-    onDelete,
-}) => {
-    const onDeleteClick = () => {
-        onDelete()
-        onClose()
+export const SelectedPassword: FC = () => {
+    const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+    const { passwords, updatePassword, deletePassword } = usePasswordStore()
+    
+    const passwordIndex = id ? parseInt(id, 10) : -1
+    const password = passwords[passwordIndex]
+    
+    if (!password || passwordIndex < 0) {
+        return (
+            <div>
+                <div className={styles.header}>
+                    <Logo />
+                    <Text size="title36">Ошибка</Text>
+                </div>
+                <div className={styles.controls}>
+                    <Text>Пароль не найден</Text>
+                    <Button fullWidth onClick={() => navigate('/passwords')}>
+                        Назад к списку
+                    </Button>
+                </div>
+            </div>
+        )
+    }
+    const onDeleteClick = async () => {
+        try {
+            await deletePassword(passwordIndex)
+            navigate('/passwords')
+        } catch (error) {
+            console.error('Failed to delete password:', error)
+            alert('Ошибка при удалении пароля')
+        }
     }
 
-    const onSaveClick = (password: Password) => {
-        onSave(password)
-        onClose()
+    const onSaveClick = async (updatedPassword: Password) => {
+        try {
+            await updatePassword(passwordIndex, updatedPassword)
+            navigate('/passwords')
+        } catch (error) {
+            console.error('Failed to update password:', error)
+            alert('Ошибка при сохранении пароля')
+        }
     }
 
     return (
@@ -41,13 +62,13 @@ export const SelectedPassword: FC<SelectedPasswordProps> = ({
 
             <div className={styles.controls}>
                 <PasswordForm
-                    password={passwords[selectedPasswordId]}
+                    password={password}
                     onSubmit={onSaveClick}
                 />
                 <Button fullWidth theme="second" onClick={onDeleteClick}>
                     Удалить
                 </Button>
-                <Button fullWidth theme="second" onClick={onClose}>
+                <Button fullWidth theme="second" onClick={() => navigate('/passwords')}>
                     Назад
                 </Button>
             </div>

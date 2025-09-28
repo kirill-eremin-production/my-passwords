@@ -1,22 +1,24 @@
 import { FC } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PasswordForm } from '../../components/PasswordForm/PasswordForm'
 import { Button } from '../../components/Button/Button'
 import { Password } from '../../types/passwords'
 import { Logo } from '../../components/Logo/Logo'
 import { Text } from '../../components/Text/Text'
+import { usePasswordStore } from '../../stores/passwordStore'
 
-export interface CreateNewPasswordProps {
-    onGoBack: () => void
-    onSave: (password: Password) => void
-}
+export const CreateNewPassword: FC = () => {
+    const navigate = useNavigate()
+    const { addPassword } = usePasswordStore()
 
-export const CreateNewPassword: FC<CreateNewPasswordProps> = ({
-    onGoBack,
-    onSave,
-}) => {
-    const onPasswordFormSubmit = (password: Password) => {
-        onSave(password)
-        onGoBack()
+    const onPasswordFormSubmit = async (password: Password) => {
+        try {
+            await addPassword(password)
+            navigate('/passwords')
+        } catch (error) {
+            console.error('Failed to save password:', error)
+            alert('Ошибка при сохранении пароля')
+        }
     }
 
     return (
@@ -24,7 +26,7 @@ export const CreateNewPassword: FC<CreateNewPasswordProps> = ({
             <Logo />
             <Text size="title36">Секрет</Text>
             <PasswordForm password={{}} onSubmit={onPasswordFormSubmit} />
-            <Button fullWidth onClick={onGoBack} theme="second">
+            <Button fullWidth onClick={() => navigate('/passwords')} theme="second">
                 Назад
             </Button>
         </div>

@@ -1,6 +1,5 @@
 import { FC, useState, useEffect } from 'react'
-
-import { Passwords } from '../../types/passwords'
+import { useNavigate } from 'react-router-dom'
 
 import { Logo } from '../../components/Logo/Logo'
 import { Button } from '../../components/Button/Button'
@@ -8,22 +7,13 @@ import { PasswordsList } from '../../components/PasswordsList/PasswordsList'
 import { Text } from '../../components/Text/Text'
 import { BiometricButton } from '../../components/BiometricButton'
 import { hasBiometricCredentials } from '../../api/biometric'
+import { usePasswordStore } from '../../stores/passwordStore'
 
 import styles from './List.module.css'
 
-export interface PasswordsListProps {
-    passwords: Passwords
-    onSelectPasswordFromList: (id: number) => void
-    onGoToCreateNewPasswordPage: () => void
-    masterPassword?: string | null
-}
-
-export const List: FC<PasswordsListProps> = ({
-    passwords,
-    onSelectPasswordFromList,
-    onGoToCreateNewPasswordPage,
-    masterPassword,
-}) => {
+export const List: FC = () => {
+    const navigate = useNavigate()
+    const { passwords, masterPassword, loadPasswords } = usePasswordStore()
     const [biometricMessage, setBiometricMessage] = useState<string>('')
     const [showBiometricButton, setShowBiometricButton] = useState<boolean>(false)
 
@@ -34,7 +24,8 @@ export const List: FC<PasswordsListProps> = ({
         }
         
         checkBiometricCredentials()
-    }, [])
+        loadPasswords() // Загрузка паролей при монтировании компонента
+    }, [loadPasswords])
 
     const handleBiometricSuccess = () => {
         setBiometricMessage('Биометрическая аутентификация успешно настроена!')
@@ -55,12 +46,12 @@ export const List: FC<PasswordsListProps> = ({
 
             <div className={styles.list}>
                 <PasswordsList
-                    onSelectListItem={onSelectPasswordFromList}
+                    onSelectListItem={(id: number) => navigate(`/passwords/${id}`)}
                     passwords={passwords}
                 />
                 <Button
                     fullWidth
-                    onClick={onGoToCreateNewPasswordPage}
+                    onClick={() => navigate('/passwords/new')}
                     theme="main"
                 >
                     Записать новый секрет

@@ -1,4 +1,5 @@
 import { FC, FormEventHandler, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { sendAuthCode } from '../../api/sendAuthCode'
 import { toStringOrUndefined } from '../../utils/toStringOrUndefined'
 import { Input } from '../../components/Input/Input'
@@ -8,18 +9,15 @@ import { Text } from '../../components/Text/Text'
 import { SendTelegramAuthCodeButton } from '../../features/SendTelegramAuthCode'
 import { BiometricButton } from '../../components/BiometricButton'
 import { hasBiometricCredentials } from '../../api/biometric'
+import { useAuthStore } from '../../stores/authStore'
+import { usePasswordStore } from '../../stores/passwordStore'
 
 import styles from './AuthPage.module.css'
 
-export interface AuthPageProps {
-    setIsAuthPage: (value: boolean) => void
-    setMasterPassword: (value: string | null) => void
-}
-
-export const AuthPage: FC<AuthPageProps> = ({
-    setIsAuthPage,
-    setMasterPassword,
-}) => {
+export const AuthPage: FC = () => {
+    const navigate = useNavigate()
+    const { setIsAuthenticated } = useAuthStore()
+    const { setMasterPassword, isMasterPasswordSet } = usePasswordStore()
     const [isError, setIsError] = useState<boolean>(false)
     const [biometricError, setBiometricError] = useState<string>('')
     const [hasCredentials, setHasCredentials] = useState<boolean>(false)
@@ -53,17 +51,21 @@ export const AuthPage: FC<AuthPageProps> = ({
                     return
                 }
 
-                setIsAuthPage(false)
+                setIsAuthenticated(true)
+                navigate(isMasterPasswordSet ? '/passwords' : '/master-password')
             },
         })
     }
 
     const handleBiometricSuccess = (masterPassword?: string) => {
+        setIsAuthenticated(true)
         if (masterPassword) {
             // Биометрическая аутентификация - устанавливаем мастер-пароль и переходим дальше
             setMasterPassword(masterPassword)
+            navigate('/passwords')
+        } else {
+            navigate(isMasterPasswordSet ? '/passwords' : '/master-password')
         }
-        setIsAuthPage(false)
     }
 
     const handleBiometricError = (error: string) => {
